@@ -19,9 +19,11 @@
 ## 快速参考
 
 ```bash
+# 更新 MSYS2 软件包数据库并安装工具链
 pacman -Syu
 pacman -S mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-make mingw-w64-ucrt-x86_64-cmake
 
+# 使用 CMake 配置并构建项目
 cmake -B build -G "MinGW Makefiles"
 cmake --build build
 ```

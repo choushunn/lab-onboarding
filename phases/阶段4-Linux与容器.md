@@ -23,33 +23,40 @@
 ## 快速参考
 
 ```bash
-cd /path
-ls -la
-cp src dst
-mv src dst
-rm -rf dir
-cat file
-grep pattern file
-find . -name "*.py"
-chmod +x file
+# Linux 基本操作
+cd /path            # 切换目录
+ls -la              # 列出文件
+cp src dst          # 复制
+mv src dst          # 移动或重命名
+rm -rf dir          # 删除目录
+cat file            # 查看文件
+grep pattern file   # 搜索文件内容
+find . -name "*.py" # 查找文件
 
+chmod +x file       # 添加执行权限
+
+# 配置 SSH 远程登录
 sudo apt install openssh-server
 sudo systemctl enable ssh
-ip a
+ip a                # 查看 IP 地址
 
-tmux new -s work
-# Ctrl+B d 分离会话
-tmux attach -t work
-tmux ls
+# tmux 会话管理
+tmux new -s work    # 新建会话
+# Ctrl+B d          # 分离会话
+tmux attach -t work # 重连会话
+tmux ls             # 列出会话
 
-scp local.file user@vm-ip:~/remote/path/
-scp user@vm-ip:~/remote.file ./local/
-rsync -avz ./local/ user@vm-ip:~/remote/
+# scp 文件传输
+scp local.file user@vm-ip:~/remote/path/    # 本机上传到 VM
+scp user@vm-ip:~/remote.file ./local/       # 从 VM 下载到本机
+rsync -avz ./local/ user@vm-ip:~/remote/    # 增量同步
 
+# Docker 容器管理
 sudo apt install docker.io docker-compose-v2
 sudo usermod -aG docker $USER
 docker run hello-world
 
+# Claude Code AI 编程助手
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo bash -
 sudo apt install -y nodejs
 npm install -g @anthropic-ai/claude-code

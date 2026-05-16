@@ -7,7 +7,7 @@
 ## 前置依赖
 
 - 阶段 2（Python 与开发环境）
-- 一台配备 NVIDIA GPU 的电脑，或实验室 GPU 服务器访问权限
+- 一台配备 NVIDIA GPU 的电脑
 
 ## 任务
 
@@ -20,15 +20,20 @@
 ## 快速参考
 
 ```bash
+# 查看 GPU 信息与驱动版本
 nvidia-smi
 
+# 创建并激活深度学习环境
 conda create -n deeplearning python=3.11
 conda activate deeplearning
 
+# 安装 PyTorch CUDA 版
 conda install pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch -c nvidia
 
+# 验证 GPU 是否可用
 python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}'); print(f'GPU count: {torch.cuda.device_count()}')"
 
+# 启动 Jupyter Lab
 conda install jupyterlab
 jupyter lab
 ```

@@ -18,20 +18,28 @@
 ## 快速参考
 
 ```bash
+# 配置用户信息
 git config --global user.name "Your Name"
 git config --global user.email "your@email.com"
 
+# 生成 SSH 密钥，将 ~/.ssh/id_ed25519.pub 内容添加到 GitHub
 ssh-keygen -t ed25519 -C "your@email.com"
-# 将 ~/.ssh/id_ed25519.pub 内容添加到 GitHub Settings → SSH Keys
 
+# 初始化或克隆仓库
 git init
 git clone <仓库地址>
+
+# 本地提交
 git status
 git add <文件>
 git commit -m "消息"
+
+# 远程同步
 git remote add origin <地址>
 git push origin main
 git pull origin main
+
+# 分支操作
 git branch <分支名>
 git checkout <分支名>
 git merge <分支名>
