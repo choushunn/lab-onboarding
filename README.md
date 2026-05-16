@@ -1,33 +1,100 @@
 # 实验室入门任务
 
-## 这是什么
-
-本仓库为实验室新成员提供一套标准化的开发环境搭建指南，覆盖从网络配置到容器开发的完整工具链。
+> **目标**：帮助实验室新成员在 Windows 环境下完成开发工具链的搭建，覆盖网络、版本控制、Python/C++ 开发环境、Linux 与容器基础。
+>
+> **前置条件**：一台 Windows 电脑，无其他要求。
+>
+> **阶段依赖**：阶段 0 → 1 → 2 → 3 → 4 建议按顺序进行；阶段 4 依赖阶段 1（Git）和阶段 2（编辑器使用）；阶段 4.4 依赖 4.1 和 4.2；阶段 5 依赖阶段 2；阶段 6 依赖阶段 3。
 
 ## 适用对象
 
 - 刚进入实验室的研究生新生
-- 需要统一开发环境的实验室成员
 - 使用 Windows 作为主力操作系统的用户
 
 ## 学习路线
 
-| 阶段 | 主题 | 预计时间 | 前置依赖 |
-|------|------|----------|----------|
-| 0 | 网络与账号 | 30 min | 无 |
-| 1 | Git 版本控制 | 2 h | 阶段 0 |
-| 2 | Python 与开发环境 | 3 h | 阶段 1 |
-| 3 | C 语言、CMake 与 OpenCV | 4 h | 阶段 1、2 |
-| 4 | Linux 虚拟机与容器 | 4 h | 阶段 1、2 |
-| 5 | AI / 深度学习环境 | 2 h | 阶段 2 |
-| 6 | 嵌入式开发环境 | 4 h | 阶段 3 |
+| 阶段 | 主题 | 详细指南 | 预计时间 | 前置依赖 |
+|------|------|----------|----------|----------|
+| 0 | 网络与账号 | [阶段0-网络与账号.md](phases/阶段0-网络与账号.md) | 30 min | 无 |
+| 1 | Git 版本控制 | [阶段1-Git.md](phases/阶段1-Git.md) | 2 h | 阶段 0 |
+| 2 | Python 与开发环境 | [阶段2-Python与开发环境.md](phases/阶段2-Python与开发环境.md) | 3 h | 阶段 1 |
+| 3 | C 语言、CMake 与 OpenCV | [阶段3-C与OpenCV.md](phases/阶段3-C与OpenCV.md) | 4 h | 阶段 1、2 |
+| 4 | Linux 虚拟机与容器 | [阶段4-Linux与容器.md](phases/阶段4-Linux与容器.md) | 4 h | 阶段 1、2 |
+| 5 | AI / 深度学习环境 | [阶段5-AI与深度学习环境.md](phases/阶段5-AI与深度学习环境.md) | 2 h | 阶段 2 |
+| 6 | 嵌入式开发环境 | [阶段6-嵌入式开发环境.md](phases/阶段6-嵌入式开发环境.md) | 4 h | 阶段 3 |
+
+> **阶段 5（AI）和阶段 6（嵌入式）根据研究方向选做**
+
+## 快速导航（验收标准）
+
+### 阶段 0：网络与账号
+
+| 任务 | 验收 |
+|------|------|
+| 配置科学上网，能稳定打开 GitHub；注册 GitHub 账号，完成邮箱验证 | 浏览器可打开 https://github.com/ 并处于已登录状态 |
+
+### 阶段 1：Git
+
+| 子项 | 验收 |
+|------|------|
+| 1.1 安装与基础配置 | `git config --global user.name` 和 `user.email` 输出正确 |
+| 1.2 本地仓库操作 | 本地仓库有至少一条提交记录 |
+| 1.3 远程仓库协作 | 远程仓库上能看到你的提交记录；`git push` 无需重复输入密码 |
+| 1.4 分支管理 | 能展示分支合并历史 |
+| 1.5 `.gitignore` | 仓库中无无关文件被跟踪 |
+| 1.6 VSCode 集成 | 在 VSCode 中完成至少一次 `add` → `commit` → `push` |
+
+### 阶段 2：Python 与开发环境
+
+| 子项 | 验收 |
+|------|------|
+| 2.1 Conda | `conda activate` 后解释器属于该环境；`conda list` 可见所装包 |
+| 2.2 VSCode + Python | 终端成功执行 `hello.py` |
+| 2.3 Trae | 终端成功执行 `hello.py`；断点可命中 |
+| 2.4 pip 清华源 | 安装日志中下载地址为 `pypi.tuna.tsinghua.edu.cn` |
+| 2.5 conda 清华源 | `conda install` 输出中域名为 `mirrors.tuna.tsinghua.edu.cn` |
+| 2.6 uv | A 或 B 跑通；安装过程走清华 PyPI |
+
+### 阶段 3：C 语言、CMake 与 OpenCV
+
+| 子项 | 验收 |
+|------|------|
+| 3.1 MSYS2 | `gcc --version` 输出与预期套件一致 |
+| 3.2 VSCode + C | 能编译运行至少一个 `.c` 文件；断点可命中 |
+| 3.3 OpenCV | 自建 CMake 项目，运行 `cv::Mat` 示例成功 |
+
+### 阶段 4：Linux 虚拟机与容器
+
+| 子项 | 验收 |
+|------|------|
+| 4.1 虚拟机 | 开机进入 Ubuntu 22.04 桌面或控制台登录成功 |
+| 4.2 Linux 基础 | `apt update` 无源错误；本机可 SSH 登录 VM |
+| 4.3 Docker | 浏览器能访问 compose 中声明的端口；`docker compose down` 可正常回收 |
+| 4.4 VSCode 远程开发 | VSCode 左下角显示 `SSH: <虚拟机IP>` 连接成功 |
+| 4.5 AI 编程助手 | `claude` 可正常启动并响应 DeepSeek 模型 |
+
+### 阶段 5：AI / 深度学习环境
+
+| 子项 | 验收 |
+|------|------|
+| 5.1 NVIDIA 驱动与 CUDA | `nvidia-smi` 显示 GPU 信息；`nvcc --version` 输出 CUDA 版本 |
+| 5.2 PyTorch 环境 | `torch.cuda.is_available()` 返回 `True` |
+| 5.3 Jupyter Lab | 浏览器打开 Jupyter Lab 界面；Notebook 中可调用 GPU |
+
+### 阶段 6：嵌入式开发环境
+
+| 子项 | 验收 |
+|------|------|
+| 6.1 Keil MDK | Keil uVision 可正常启动；新建空项目编译通过 |
+| 6.2 STM32CubeMX | CubeMX 成功生成 Keil 项目；可在 uVision 中编译 |
+| 6.3 编译与烧录 | 开发板运行用户程序 |
+| 6.4 调试入门 | 断点可命中；可查看变量实时值 |
 
 ## 文件结构
 
 ```
-├── README.md                   # 本文件
-├── 基础入门.md                 # 完整学习路线（一站式阅读）
-├── phases/                     # 各阶段详细指南（按需查阅）
+├── README.md                   # 本文件（完整学习路线）
+├── phases/                     # 各阶段详细指南
 │   ├── 阶段0-网络与账号.md
 │   ├── 阶段1-Git.md
 │   ├── 阶段2-Python与开发环境.md
@@ -35,20 +102,33 @@
 │   ├── 阶段4-Linux与容器.md
 │   ├── 阶段5-AI与深度学习环境.md
 │   └── 阶段6-嵌入式开发环境.md
-├── resources/                  # 辅助资料
-│   └── 常见问题.md
-└── scripts/                    # 自动化脚本
-    └── check_env.py
+└── resources/                  # 辅助资料
+    └── 常见问题.md
 ```
 
 ## 使用方式
 
 1. 从 **阶段 0** 开始，按顺序完成
-2. 每个阶段末尾有验收标准，完成后自行核对
+2. 每个阶段有详细指南（`phases/` 目录）和验收标准（见上表），完成后自行核对
 3. 遇到问题先查阅 [常见问题](resources/常见问题.md)
-4. 运行 `python scripts/check_env.py` 检查环境是否就绪
-5. **阶段 5（AI）** 和 **阶段 6（嵌入式）** 根据研究方向选做
+
+## 参考链接
+
+| 主题 | URL |
+|------|-----|
+| GitHub | https://github.com/ |
+| Git 官网 | https://git-scm.com/ |
+| 《Pro Git》中文版 | https://git-scm.com/book/zh/v2 |
+| VSCode | https://code.visualstudio.com/ |
+| Trae 中国站 | https://www.trae.cn/ |
+| 清华 PyPI 帮助 | https://mirror.tuna.tsinghua.edu.cn/help/pypi/ |
+| 清华 Anaconda 帮助 | https://mirror.tuna.tsinghua.edu.cn/help/anaconda/ |
+| uv 文档 | https://docs.astral.sh/uv/ |
+| MSYS2 | https://www.msys2.org/ |
+| CMake 官网 | https://cmake.org/ |
+| VirtualBox | https://www.virtualbox.org/wiki/Downloads |
+| Docker Engine 安装 | https://docs.docker.com/engine/install/ |
 
 ## 贡献
 
-如需修改或补充内容，请直接提交 PR 或联系实验室管理员。
+如需修改或补充，请提交 PR 或联系实验室管理员。
