@@ -12,6 +12,8 @@
     - GCC (MSYS2)
     - CMake
     - Docker
+    - NVIDIA 驱动与 PyTorch (CUDA)
+    - ARM GCC 交叉编译链与 OpenOCD
 """
 
 import shutil
@@ -78,6 +80,16 @@ def main():
     print()
     print("[Docker]")
     all_ok &= check("Docker", "docker --version", show_output=True)
+
+    print()
+    print("[AI / Deep Learning]")
+    all_ok &= check("nvidia-smi", "nvidia-smi", show_output=True)
+    all_ok &= check("PyTorch (CUDA)", f"{sys.executable} -c \"import torch; print(torch.cuda.is_available())\"")
+
+    print()
+    print("[Embedded]")
+    all_ok &= check("arm-none-eabi-gcc", "arm-none-eabi-gcc --version", show_output=True)
+    all_ok &= check("OpenOCD", "openocd --version", show_output=True)
 
     print()
     print("=" * 50)
