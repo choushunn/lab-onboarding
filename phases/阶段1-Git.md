@@ -14,6 +14,7 @@
 | 1.4 分支管理 | 新建分支、切换、合并入门；练习解决一次简单冲突 | 能展示分支合并历史 |
 | 1.5 `.gitignore` | 创建 `.gitignore` 文件，排除 `__pycache__/`、`.vscode/`、`build/` 等无关文件 | 仓库中无上述无关文件被跟踪 |
 | 1.6 VSCode 集成 | 上述流程在 VSCode 终端或源代码管理面板中各走通一遍 | 在 VSCode 中完成至少一次 `add` → `commit` → `push` |
+| 1.7 提交规范 | 学习 Conventional Commits 规范：`feat:`、`fix:`、`docs:`、`refactor:` 等类型；按规范格式编写提交信息 | 提交历史中至少包含一条规范格式的提交 |
 
 ## 快速参考
 
@@ -32,7 +33,10 @@ git clone <仓库地址>
 # 本地提交
 git status
 git add <文件>
-git commit -m "消息"
+git commit -m "feat: add user login API"
+git commit -m "fix: correct null pointer in data processing"
+git commit -m "docs: update README installation guide"
+git commit -m "refactor: extract image processing module"
 
 # 远程同步
 git remote add origin <地址>
@@ -44,6 +48,24 @@ git branch <分支名>
 git checkout <分支名>
 git merge <分支名>
 ```
+
+## 提交规范
+
+提交信息采用 Conventional Commits 规范，格式如下：
+
+```
+<类型>: <简短描述>
+```
+
+| 类型 | 说明 |
+|------|------|
+| `feat` | 新功能 |
+| `fix` | 修复 bug |
+| `docs` | 文档变更 |
+| `refactor` | 代码重构，不涉及功能增减 |
+| `style` | 代码格式调整，不影响逻辑 |
+| `test` | 添加或修改测试 |
+| `chore` | 构建过程或辅助工具变动 |
 
 ## 参考链接
 
