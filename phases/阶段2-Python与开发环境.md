@@ -2,7 +2,11 @@
 
 ## 目标
 
-搭建 Python 开发环境，掌握 Conda 环境管理、IDE 调试、包管理工具 uv，并配置国内镜像源加速。
+搭建 Python 开发环境，掌握 Conda 环境管理、IDE 调试、包管理工具 uv，学习基本的代码格式化与测试实践，并配置国内镜像源加速。
+
+## 前置依赖
+
+- 阶段 1（Git）
 
 ## 任务
 
@@ -14,6 +18,8 @@
 | 2.4 pip 清华源 | 阅读 [清华 PyPI 帮助](https://mirror.tuna.tsinghua.edu.cn/help/pypi/)；执行 `pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple`；再执行 `pip install requests`（或任意小包） | 安装日志中下载地址主机为 `pypi.tuna.tsinghua.edu.cn` |
 | 2.5 conda 清华源 | 阅读 [Anaconda 镜像帮助](https://mirror.tuna.tsinghua.edu.cn/help/anaconda/)，按文档修改用户级 `~/.condarc`；执行 `conda clean -i`；在新或已有环境中 `conda install numpy` | `conda install` 输出中索引域名为 `mirrors.tuna.tsinghua.edu.cn` |
 | 2.6 uv | 按 [uv 安装文档](https://docs.astral.sh/uv/getting-started/installation/) 在 Windows 安装 uv；**路径 A**（类 pip 用法）：项目目录 `uv venv`、激活后 `uv pip install <包>` 并运行脚本；**路径 B**（项目式用法）：`uv init`、`uv add <包>`、`uv sync` 后运行入口；配置清华源：设置环境变量 `UV_DEFAULT_INDEX=https://pypi.tuna.tsinghua.edu.cn/simple` | A 或 B 跑通；安装过程走清华 PyPI |
+| 2.7 代码格式化与检查 | 安装 `ruff`：`pip install ruff`；对 Python 文件运行 `ruff check` 和 `ruff format`；了解常用规则（未使用导入、过长行等） | `ruff check` 无报错；`ruff format` 后代码格式统一 |
+| 2.8 单元测试入门 | 安装 `pytest`：`pip install pytest`；为一个简单函数编写测试用例（如 `test_add.py`）；运行 `pytest` 查看测试结果 | `pytest` 运行测试全部通过 |
 
 ## 快速参考
 
@@ -32,6 +38,17 @@ pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
 uv venv
 .venv\Scripts\activate    # Windows
 uv pip install requests
+
+# ruff 格式化与检查
+pip install ruff
+ruff check main.py         # 检查代码问题
+ruff format main.py        # 自动格式化
+
+# pytest 测试
+pip install pytest
+# 创建 test_add.py，编写测试函数
+pytest                      # 运行所有测试
+pytest -v                   # 详细输出
 ```
 
 ## 参考链接
@@ -41,5 +58,7 @@ uv pip install requests
 - [清华 PyPI 帮助](https://mirror.tuna.tsinghua.edu.cn/help/pypi/)
 - [清华 Anaconda 帮助](https://mirror.tuna.tsinghua.edu.cn/help/anaconda/)
 - [uv 文档](https://docs.astral.sh/uv/)
+- [ruff 文档](https://docs.astral.sh/ruff/)
+- [pytest 文档](https://docs.pytest.org/)
 - [VSCode](https://code.visualstudio.com/)
 - [Trae 中国站](https://www.trae.cn/)
