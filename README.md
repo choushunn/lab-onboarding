@@ -2,7 +2,15 @@
 
 为实验室新成员提供一套标准化的开发环境搭建指南，覆盖计算机科学、软件工程、人工智能、嵌入式系统开发等方向的通用基础与专业工具链。
 
-前置条件：一台 Windows 电脑，无其他要求。
+前置条件：一台 Windows 电脑，无其他要求。如对计算机硬件与软件基础尚不熟悉，可先阅读 [认识你的电脑](https://www.criwits.top/missing/computer-and-its-components.html) 了解 CPU、内存、硬盘等基本概念。
+
+> **重要提示**：Windows 默认禁止运行 PowerShell 脚本，使用 Conda、uv 等工具时可能出现权限错误。请以管理员身份打开 PowerShell，执行以下命令解除限制：
+>
+> ```powershell
+> # 执行
+> Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+> ```
+> 该命令仅对当前用户生效，仅允许运行受信任来源的脚本，建议完成环境搭建后保持此设置不变。
 
 路线说明：阶段 0 至 4 为全体必修的通用基础；阶段 5 和阶段 6 根据研究方向选做；阶段 7 为全体必修，可与前序阶段并行完成。各阶段涉及 Shell、Git、调试等内容可参考 [MIT Missing Semester](https://missing.csail.mit.edu/) 作为补充。
 
