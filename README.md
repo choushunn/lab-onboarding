@@ -4,7 +4,7 @@
 
 前置条件：一台 Windows 电脑，无其他要求。
 
-路线说明：阶段 0 至 4 为全体必修的通用基础；阶段 5 和阶段 6 根据研究方向选做；阶段 7 为全体必修，可与前序阶段并行完成。
+路线说明：阶段 0 至 4 为全体必修的通用基础；阶段 5 和阶段 6 根据研究方向选做；阶段 7 为全体必修，可与前序阶段并行完成。各阶段涉及 Shell、Git、调试等内容可参考 [MIT Missing Semester](https://missing.csail.mit.edu/) 作为补充。
 
 ## 学习路线
 
@@ -64,7 +64,10 @@
 | VirtualBox | https://www.virtualbox.org/wiki/Downloads |
 | Docker Engine 安装 | https://docs.docker.com/engine/install/ |
 | Markdown 指南 | https://www.markdownguide.org/ |
+| MIT Missing Semester | https://missing.csail.mit.edu/ |
 | TeX Live | https://tug.org/texlive/ |
+| 认识你的电脑 | https://www.criwits.top/missing/computer-and-its-components.html |
+
 
 ## 贡献
 
