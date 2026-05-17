@@ -4,8 +4,6 @@
 
 前置条件：一台 Windows 电脑。如对计算机硬件与软件基础尚不熟悉，可先阅读 [认识你的电脑](https://www.criwits.top/missing/computer-and-its-components.html) 了解 CPU、内存、硬盘等基本概念。
 
-> **额外硬件需求**：阶段 5（AI/深度学习）需要一台配备 NVIDIA GPU 的电脑；阶段 6（嵌入式开发）需要 STM32 开发板及 ST-Link 调试器。请根据研究方向提前准备。
-
 > **重要提示**：Windows 默认禁止运行 PowerShell 脚本，使用 Conda、uv 等工具时可能出现权限错误。请以管理员身份打开 PowerShell，执行以下命令解除限制：
 >
 > ```powershell
