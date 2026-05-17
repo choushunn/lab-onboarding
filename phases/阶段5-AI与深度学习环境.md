@@ -4,6 +4,7 @@
 
 搭建深度学习开发环境，包括 NVIDIA GPU 驱动、CUDA 工具包、PyTorch 框架以及 Jupyter Lab 交互式开发环境。
 
+提示：需确认电脑由 NVIDIA GPU，否则无法使用 PyTorch 的 GPU 版本。
 ## 前置依赖
 
 - 阶段 2（Python 与开发环境）
