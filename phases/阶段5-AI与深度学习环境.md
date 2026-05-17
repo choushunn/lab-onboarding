@@ -45,3 +45,4 @@ jupyter lab
 - [cuDNN 下载](https://developer.nvidia.com/cudnn)
 - [PyTorch 官网](https://pytorch.org/)
 - [Jupyter Lab 文档](https://jupyterlab.readthedocs.io/)
+- [动手学深度学习](https://zh.d2l.ai/)

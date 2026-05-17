@@ -18,7 +18,7 @@
 | 4.3 Docker | 按 [Docker Engine 安装](https://docs.docker.com/engine/install/ubuntu/) 在 Ubuntu 中安装 Docker；确认 `docker run hello-world`；使用 docker compose 启动 nginx 服务，执行 `docker compose up -d`；查看 `docker compose ps` 与日志 | 浏览器或 `curl` 能访问 compose 中声明的端口；`docker compose down` 可正常回收 |
 | 4.4 VSCode 远程开发 | 在 VSCode 中安装 Remote-SSH 扩展；通过 SSH 连接到 Ubuntu 虚拟机；在远程窗口中打开文件夹、编辑文件、运行终端命令，[参考教程](https://www.bilibili.com/video/BV13Z421T7oz/) | VSCode 左下角显示 `SSH: <虚拟机IP>` 连接成功；可在远程终端执行命令 |
 | 4.5 远程工作必备 | 安装 tmux，学习新建、分离、重连会话：`tmux new -s`、`Ctrl+B d`、`tmux attach -t`；练习从本机传文件到 VM 和从 VM 下载到本机：`scp file user@host:/path`、`rsync -avz ./local/ user@host:~/remote/` | 能用 tmux 管理持久会话；能用 scp 或 rsync 在宿主机与 VM 间传输文件 |
-| 4.6 AI 编程助手 | 在 VM 中安装 [Node.js](https://nodejs.org/)；通过 npm 全局安装 `@anthropic-ai/claude-code`；获取 DeepSeek API Key 并配置环境变量 `ANTHROPIC_API_KEY` 和 `ANTHROPIC_BASE_URL`；在项目目录运行 `claude` 启动交互式编程会话 | `claude --version` 输出版本号；`claude` 可正常启动并响应 DeepSeek 模型 |
+| 4.6 AI 编程助手 | 在 VM 中安装 [Node.js](https://nodejs.org/)；通过 npm 全局安装 `@anthropic-ai/claude-code`；获取 DeepSeek API Key 并配置环境变量 `ANTHROPIC_API_KEY` 和 `ANTHROPIC_BASE_URL`（Claude Code 兼容 OpenAI 格式的第三方 API，因此使用 DeepSeek 的 Key 时需设置 Anthropic 命名的环境变量）；在项目目录运行 `claude` 启动交互式编程会话 | `claude --version` 输出版本号；`claude` 可正常启动并响应 DeepSeek 模型 |
 
 ## 快速参考
 

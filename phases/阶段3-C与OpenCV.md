@@ -2,7 +2,7 @@
 
 ## 目标
 
-在 Windows 下通过 MSYS2 搭建 C/C++ 开发环境，掌握 CMake 构建系统。OpenCV 从源码编译为可选任务，AI 与嵌入式方向推荐完成。
+在 Windows 下通过 MSYS2 搭建 C/C++ 开发环境，掌握 CMake 构建系统。从源码编译 OpenCV 为可选任务，AI 与嵌入式方向推荐完成。
 
 ## 前置依赖
 
