@@ -13,7 +13,7 @@
 >
 > 该命令仅对当前用户生效，仅允许运行受信任来源的脚本，建议完成环境搭建后保持此设置不变。
 
-各阶段涉及 Shell、Git、调试等内容可参考 [MIT Missing Semester](https://missing.csail.mit.edu/) 作为补充。
+各阶段遇到问题请查看 [常见问题](resources/常见问题.md) 中的解决方案，涉及 Shell、Git、调试等内容可参考 [MIT Missing Semester](https://missing.csail.mit.edu/) 作为补充。
 
 ## 学习路线
 
