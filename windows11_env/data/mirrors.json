@@ -13,10 +13,10 @@
     "indexUrl": "https://mirrors.aliyun.com/pypi/simple/"
   },
   "npm": {
-    "registry": "https://registry.npmmirror.com/"
+    "registry": "https://mirrors.huaweicloud.com/repository/npm/"
   },
   "corepack": {
-    "registry": "https://registry.npmmirror.com/"
+    "registry": "https://mirrors.huaweicloud.com/repository/npm/"
   },
   "cargo": {
     "sourceName": "rsproxy-sparse",
