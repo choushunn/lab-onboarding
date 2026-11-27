@@ -8,3 +8,5 @@ build/
 .screenshots/
 installers/*
 !installers/.gitkeep
+!installers/Snipaste-2.11.3-x64-Setup.exe
+!installers/UninstallTool_3.7.1.5699_Setup.exe
