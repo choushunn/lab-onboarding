@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    paths:
+      - 'windows11_env/**'
+      - '.github/workflows/ci.yml'
+  pull_request:
+    paths:
+      - 'windows11_env/**'
+      - '.github/workflows/ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  powershell:
+    name: PowerShell 检查与测试
+    runs-on: windows-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: windows11_env
+    steps:
+      - name: 检出仓库
+        uses: actions/checkout@v4
+
+      - name: 安装 just
+        uses: taiki-e/install-action@v2
+        with:
+          tool: just
+
+      - name: 缓存 PowerShell 模块
+        uses: actions/cache@v4
+        with:
+          path: ~\Documents\PowerShell\Modules
+          key: psmodules-${{ runner.os }}-pester6.2.0-psa1.25.0
+
+      - name: 安装 PowerShell 模块
+        shell: pwsh
+        run: |
+          Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+          $required = [ordered]@{ Pester = '6.2.0'; PSScriptAnalyzer = '1.25.0' }
+          foreach ($name in $required.Keys) {
+              $installed = Get-Module -ListAvailable -Name $name | Sort-Object Version -Descending | Select-Object -First 1
+              if (-not $installed -or $installed.Version -lt [version]$required[$name]) {
+                  Install-Module -Name $name -MinimumVersion $required[$name] -Force -AllowClobber -Scope CurrentUser
+              }
+          }
+
+      - name: 静态检查
+        shell: pwsh
+        run: just lint-ps
+
+      - name: 单元测试
+        shell: pwsh
+        run: just test-ps
