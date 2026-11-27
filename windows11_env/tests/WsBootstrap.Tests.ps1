@@ -311,6 +311,50 @@ Describe '验收' {
     }
 }
 
+Describe '下载与解压校验' {
+    It '拒绝越界归档条目且不写出目标目录' {
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
+        $archive = Join-Path $TestDrive 'zip-slip.zip'
+        $zip = [IO.Compression.ZipFile]::Open($archive, [IO.Compression.ZipArchiveMode]::Create)
+        try {
+            $entry = $zip.CreateEntry('../evil.txt')
+            $writer = [IO.StreamWriter]::new($entry.Open())
+            try {
+                $writer.Write('boom')
+            } finally {
+                $writer.Dispose()
+            }
+        } finally {
+            $zip.Dispose()
+        }
+        $destination = Join-Path $TestDrive 'zip-slip-out'
+        { Expand-WsArchive -Path $archive -DestinationPath $destination } | Should -Throw '*越界*'
+        Test-Path -LiteralPath (Join-Path $TestDrive 'evil.txt') | Should -BeFalse
+    }
+
+    It '哈希匹配时通过，不匹配时终止' {
+        $context = New-WsContext -RepoRoot $script:repo
+        $context.LogPath = Join-Path $TestDrive 'hash.log'
+        $path = Join-Path $TestDrive 'payload.bin'
+        Set-Content -LiteralPath $path -Value 'payload'
+        $hash = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
+        $package = [pscustomobject]@{ id = 'x'; name = 'X'; sha256 = $hash }
+        Assert-WsFileHash -Context $context -Package $package -Path $path | Should -Be 'Verified'
+        $package.sha256 = '0' * 64
+        { Assert-WsFileHash -Context $context -Package $package -Path $path } | Should -Throw '*哈希校验失败*'
+    }
+
+    It '未配置哈希时告警但继续' {
+        $context = New-WsContext -RepoRoot $script:repo
+        $context.LogPath = Join-Path $TestDrive 'hash-missing.log'
+        $path = Join-Path $TestDrive 'unverified.bin'
+        Set-Content -LiteralPath $path -Value 'payload'
+        $package = [pscustomobject]@{ id = 'x'; name = 'X' }
+        Assert-WsFileHash -Context $context -Package $package -Path $path | Should -Be 'Unverified'
+        (Get-Content -LiteralPath $context.LogPath -Raw) | Should -Match '未配置哈希校验'
+    }
+}
+
 Describe '包安装' {
     BeforeEach {
         $global:WsTestProcess = $null
@@ -480,6 +524,26 @@ Describe '包安装' {
             Install-WsExeInstaller -Context $context -Package $package | Should -Be 'Installed'
             $global:WsTestProcessCount | Should -Be 1
             $global:WsTestProcess | Should -Contain '--confirm-command'
+        }
+    }
+
+    It 'exeInstaller 哈希不匹配时终止且不执行安装' {
+        InModuleScope WsBootstrap -Parameters @{ Repo = $script:repo; Directory = $TestDrive } {
+            param($Repo, $Directory)
+            Mock Invoke-WsDownload {
+                param($Uri, $OutFile)
+                Set-Content -LiteralPath $OutFile -Value 'stub'
+            }
+            Mock Invoke-WsProcess { throw '不应执行安装' }
+            $context = New-WsContext -RepoRoot $Repo
+            $context.LogPath = Join-Path $Directory 'exe-hash.log'
+            $package = [pscustomobject]@{
+                id = 'x'; name = 'X'; provider = 'exeInstaller';
+                urls = @('https://example.invalid/x.exe'); args = @('/S');
+                target = (Join-Path $Directory 'hash-exe-target'); sha256 = ('0' * 64)
+            }
+            { Install-WsExeInstaller -Context $context -Package $package } | Should -Throw '*哈希校验失败*'
+            Should -Invoke Invoke-WsProcess -Times 0
         }
     }
 

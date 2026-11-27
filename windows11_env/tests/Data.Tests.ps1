@@ -82,6 +82,16 @@ Describe '数据校验' {
     It '从镜像地址解析主机' {
         Get-WsUriHost -Uri 'sparse+https://rsproxy.cn/index/' | Should -Be 'rsproxy.cn'
     }
+
+    It 'Maven 镜像只代理 central' {
+        $script:context.Mirrors.maven.mirrorOf | Should -Be 'central'
+    }
+
+    It '压缩包下载都声明哈希' {
+        $missing = @(@($script:context.DevPackages.packages) + @($script:context.SystemPackages.packages) |
+            Where-Object { $_.provider -eq 'zipDownload' -and -not ($_.sha256 -or $_.sha512 -or $_.hashUrls) })
+        $missing.id | Should -BeNullOrEmpty
+    }
 }
 
 Describe '模板渲染' {

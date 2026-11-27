@@ -33,7 +33,7 @@
   "maven": {
     "mirrorId": "aliyun",
     "mirrorUrl": "https://maven.aliyun.com/repository/public",
-    "mirrorOf": "*"
+    "mirrorOf": "central"
   },
   "gradle": {
     "repositories": [

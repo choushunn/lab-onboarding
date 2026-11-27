@@ -29,6 +29,25 @@ function Get-WsHttpText {
     [string]$response.Content
 }
 
+function Test-WsArchiveEntryPath {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][AllowEmptyString()][string]$EntryPath,
+        [Parameter(Mandatory = $true)][string]$DestinationPath
+    )
+
+    if ([string]::IsNullOrWhiteSpace($EntryPath)) {
+        return $true
+    }
+    $relative = $EntryPath -replace '/', [IO.Path]::DirectorySeparatorChar
+    if ([IO.Path]::IsPathRooted($relative)) {
+        return $false
+    }
+    $root = [IO.Path]::GetFullPath($DestinationPath).TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar)
+    $target = [IO.Path]::GetFullPath((Join-Path $root $relative))
+    $target.StartsWith($root + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)
+}
+
 function Expand-WsArchive {
     [CmdletBinding()]
     param(
@@ -36,7 +55,70 @@ function Expand-WsArchive {
         [Parameter(Mandatory = $true)][string]$DestinationPath
     )
 
+    $archive = [IO.Compression.ZipFile]::OpenRead($Path)
+    try {
+        foreach ($entry in $archive.Entries) {
+            if (-not (Test-WsArchiveEntryPath -EntryPath $entry.FullName -DestinationPath $DestinationPath)) {
+                throw "归档条目越界：$($entry.FullName)"
+            }
+        }
+    } finally {
+        $archive.Dispose()
+    }
     Expand-Archive -LiteralPath $Path -DestinationPath $DestinationPath -Force
+}
+
+function Get-WsPackageHash {
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)][object]$Package)
+
+    foreach ($algorithm in @('sha256', 'sha512')) {
+        if ($Package.PSObject.Properties.Name -contains $algorithm -and $Package.$algorithm) {
+            return [pscustomobject]@{
+                Algorithm = $algorithm.ToUpperInvariant()
+                Value     = ([string]$Package.$algorithm).ToLowerInvariant()
+            }
+        }
+    }
+    $hashUrls = @($Package.hashUrls | Where-Object { $_ })
+    if ($hashUrls.Count -eq 0) {
+        return $null
+    }
+    $text = (Get-WsHttpText -Uri $hashUrls[0]).Trim()
+    $value = ($text -split '\s+')[0]
+    if (-not $value) {
+        throw "哈希清单为空：$($Package.id)"
+    }
+    $algorithm = switch ($value.Length) {
+        64 { 'SHA256' }
+        128 { 'SHA512' }
+        default { throw "无法识别哈希长度：$($Package.id)" }
+    }
+    [pscustomobject]@{
+        Algorithm = $algorithm
+        Value     = $value.ToLowerInvariant()
+    }
+}
+
+function Assert-WsFileHash {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][object]$Context,
+        [Parameter(Mandatory = $true)][object]$Package,
+        [Parameter(Mandatory = $true)][string]$Path
+    )
+
+    $expected = Get-WsPackageHash -Package $Package
+    if (-not $expected) {
+        Write-WsLog "未配置哈希校验：$($Package.id)" -Level WARN -Context $Context
+        return 'Unverified'
+    }
+    $actual = (Get-FileHash -LiteralPath $Path -Algorithm $expected.Algorithm).Hash.ToLowerInvariant()
+    if ($actual -ne $expected.Value) {
+        throw "$($Package.name) 哈希校验失败：期望 $($expected.Value)，实际 $actual"
+    }
+    Write-WsLog "哈希校验通过：$($Package.id)" -Context $Context
+    'Verified'
 }
 
 function Test-WsWingetInstalled {
@@ -101,6 +183,12 @@ function Install-WsExeInstaller {
     if (-not $downloaded) {
         throw "全部下载地址失败：$($Package.id)"
     }
+    try {
+        [void](Assert-WsFileHash -Context $Context -Package $Package -Path $installer)
+    } catch {
+        Remove-Item -LiteralPath $installer -Force -ErrorAction SilentlyContinue
+        throw
+    }
     $result = Invoke-WsProcess -FilePath $installer -Arguments @($Package.args)
     Remove-Item -LiteralPath $installer -Force -ErrorAction SilentlyContinue
     if ($result.ExitCode -ne 0) {
@@ -140,10 +228,11 @@ function Install-WsFileDownload {
     foreach ($url in @($Package.urls)) {
         try {
             Invoke-WsDownload -Uri $url -OutFile $target
+            [void](Assert-WsFileHash -Context $Context -Package $Package -Path $target)
             return 'Downloaded'
         } catch {
             Remove-Item -LiteralPath $target -Force -ErrorAction SilentlyContinue
-            Write-WsLog "下载失败，尝试下一个地址：$url" -Level WARN -Context $Context
+            Write-WsLog "下载或校验失败，尝试下一个地址：$url" -Level WARN -Context $Context
         }
     }
     throw "全部下载地址失败：$($Package.id)"
@@ -215,14 +304,11 @@ function Install-WsZipDownload {
     if (-not $downloaded) {
         throw "全部下载地址失败：$($Package.id)"
     }
-
-    if ($Package.hashUrls) {
-        $hashUrl = @($Package.hashUrls)[0]
-        $expected = (Get-WsHttpText -Uri $hashUrl).Trim().Split(' ')[0].ToLowerInvariant()
-        $actual = (Get-FileHash -LiteralPath $archive -Algorithm SHA512).Hash.ToLowerInvariant()
-        if ($expected -and $expected -ne $actual) {
-            throw "$($Package.name) 哈希校验失败"
-        }
+    try {
+        [void](Assert-WsFileHash -Context $Context -Package $Package -Path $archive)
+    } catch {
+        Remove-Item -LiteralPath $archive -Force -ErrorAction SilentlyContinue
+        throw
     }
 
     $parent = Split-Path -Parent $target
@@ -305,6 +391,12 @@ function Install-WsWheelExtract {
     $wheelUrl = Get-WsWheelUrl -IndexUrl $Package.indexUrl -WheelPattern $Package.wheelPattern
     $wheel = Join-Path $env:TEMP ('wsbootstrap-' + $Package.id + '.whl')
     Invoke-WsDownload -Uri $wheelUrl -OutFile $wheel
+    try {
+        [void](Assert-WsFileHash -Context $Context -Package $Package -Path $wheel)
+    } catch {
+        Remove-Item -LiteralPath $wheel -Force -ErrorAction SilentlyContinue
+        throw
+    }
 
     $archive = Join-Path $env:TEMP ('wsbootstrap-' + $Package.id + '.zip')
     Copy-Item -LiteralPath $wheel -Destination $archive -Force
