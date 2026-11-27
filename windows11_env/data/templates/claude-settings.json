@@ -1,0 +1,45 @@
+{
+  "env": {
+    "ANTHROPIC_BASE_URL": "http://127.0.0.1:{{CCS_ROUTE_PORT}}",
+    "ANTHROPIC_DEFAULT_FABLE_MODEL": "{{AI_MODEL}}",
+    "ANTHROPIC_DEFAULT_FABLE_MODEL_NAME": "{{AI_MODEL}}",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "{{AI_MODEL}}",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL_NAME": "{{AI_MODEL}}",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "{{AI_MODEL}}",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL_NAME": "{{AI_MODEL}}",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "{{AI_MODEL}}",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL_NAME": "{{AI_MODEL}}",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+    "ENABLE_TOOL_SEARCH": "true"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(git status)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git show *)",
+      "Bash(ls *)",
+      "Bash(just verify-*)",
+      "Bash(uv run pytest *)",
+      "Bash(cmake --build *)",
+      "Bash(ctest *)",
+      "Bash(cargo test *)",
+      "Bash(go test *)",
+      "Read(**)"
+    ],
+    "additionalDirectories": [
+      "{{REPO_ROOT_JSON}}"
+    ]
+  },
+  "theme": "auto",
+  "modelPicker": {
+    "replaceBuiltInOptions": true,
+    "options": [
+      {
+        "model": "{{AI_MODEL}}",
+        "label": "{{AI_PROVIDER}}",
+        "description": "{{AI_PROVIDER}} · {{AI_MODEL}}"
+      }
+    ]
+  }
+}

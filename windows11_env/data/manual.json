@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "items": [
+    {
+      "name": "TeX Live",
+      "reason": "安装器需要人工选择路径与组件",
+      "source": "https://mirrors.tuna.tsinghua.edu.cn/CTAN/systems/texlive/tlnet",
+      "target": "C:\\Programs\\texlive"
+    },
+    {
+      "name": "TeXstudio",
+      "reason": "可选，需要时执行 winget install TeXstudio.TeXstudio",
+      "source": "https://www.texstudio.org/",
+      "target": "C:\\Program Files\\TeXstudio"
+    },
+    {
+      "name": "Bambu Studio",
+      "reason": "可选，需要时执行 winget install Bambulab.Bambustudio",
+      "source": "https://bambulab.com/en/download/studio",
+      "target": "C:\\Program Files\\Bambu Studio"
+    },
+    {
+      "name": "STM32CubeMX",
+      "reason": "ST 账号与图形安装器",
+      "source": "https://www.st.com/en/development-tools/stm32cubemx.html",
+      "target": "C:\\Program Files\\STMicroelectronics"
+    },
+    {
+      "name": "STM32CubeProgrammer",
+      "reason": "ST 账号与图形安装器",
+      "source": "https://www.st.com/en/development-tools/stm32cubeprog.html",
+      "target": "C:\\Program Files\\STMicroelectronics"
+    },
+    {
+      "name": "STM32 ST-LINK Utility",
+      "reason": "ST 官网图形安装器",
+      "source": "https://www.st.com/en/development-tools/stsw-link004.html",
+      "target": "C:\\Program Files (x86)\\STMicroelectronics"
+    },
+    {
+      "name": "STM32CubeCLT",
+      "reason": "需登录 ST 账号手动下载安装",
+      "source": "https://www.st.com/en/development-tools/stm32cubeclt.html",
+      "target": "C:\\Program Files\\STMicroelectronics"
+    },
+    {
+      "name": "Keil MDK",
+      "reason": "已安装则跳过，未安装时由入口自动下载；安装与许可证手动完成",
+      "source": "https://www.keil.com/fid/armkeil/files/eval/mdk543.exe",
+      "target": "C:\\Programs\\Keil_v5"
+    },
+    {
+      "name": "NVIDIA Nsight Systems",
+      "reason": "NVIDIA 安装器，无 WinGet 包",
+      "source": "https://developer.nvidia.com/nsight-systems",
+      "target": "C:\\Program Files\\NVIDIA Corporation"
+    },
+    {
+      "name": "EverythingToolbar",
+      "reason": "仅 GitHub Releases，需代理或手工安装",
+      "source": "https://github.com/srwi/EverythingToolbar/releases",
+      "target": "用户目录"
+    },
+    {
+      "name": "火绒安全",
+      "reason": "官网下载与图形安装器",
+      "source": "https://www.huorong.cn/",
+      "target": "C:\\Program Files\\Huorong"
+    },
+    {
+      "name": "Claude Code Skills",
+      "reason": "从插件市场逐个安装，无批量接口",
+      "source": "Trae / Claude 插件市场",
+      "target": "%USERPROFILE%\\.claude\\skills"
+    },
+    {
+      "name": "gh auth login",
+      "reason": "设备码授权需要浏览器交互",
+      "source": "gh auth login",
+      "target": "GitHub CLI"
+    },
+    {
+      "name": "Microsoft 365 激活",
+      "reason": "账号登录与许可证激活",
+      "source": "Microsoft 365",
+      "target": "Office"
+    },
+    {
+      "name": "CC Switch 供应商与路由",
+      "reason": "桌面端 GUI 配置，需与 user.json 中的供应商、模型、端口一致",
+      "source": "CC Switch",
+      "target": "本地路由"
+    }
+  ]
+}

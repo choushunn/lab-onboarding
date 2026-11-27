@@ -1,0 +1,31 @@
+{
+  "mcpServers": {
+    "DesktopCommander": {
+      "command": "npx",
+      "args": ["-y", "@wonderwhy-er/desktop-commander"],
+      "env": {},
+      "fromGalleryId": "byted-mcp-volcengine.3rd_party_mcp_server_desktopcommander",
+      "disabled": true
+    },
+    "Sequential Thinking": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"],
+      "env": {},
+      "fromGalleryId": "byted-mcp-volcengine.3rd_party_mcp_server_sequential_thinking",
+      "disabled": true
+    },
+    "pdf-reader-mcp": {
+      "command": "npx",
+      "args": ["@sylphlab/pdf-reader-mcp"],
+      "env": {},
+      "fromGalleryId": "byted-mcp-volcengine.3rd_party_mcp_server_pdf-reader-mcp",
+      "disabled": true
+    },
+    "Playwright": {
+      "command": "npx",
+      "args": ["-y", "@executeautomation/playwright-mcp-server"],
+      "env": {},
+      "fromGalleryId": "byted-mcp-volcengine.playwright"
+    }
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "pip": {
+    "indexUrl": "https://mirrors.aliyun.com/pypi/simple/",
+    "extraIndexUrl": "https://pypi.mirrors.ustc.edu.cn/simple/",
+    "trustedHosts": [
+      "mirrors.aliyun.com",
+      "pypi.mirrors.ustc.edu.cn"
+    ],
+    "timeout": 60
+  },
+  "uv": {
+    "indexUrl": "https://mirrors.aliyun.com/pypi/simple/"
+  },
+  "npm": {
+    "registry": "https://registry.npmmirror.com/"
+  },
+  "corepack": {
+    "registry": "https://registry.npmmirror.com/"
+  },
+  "cargo": {
+    "sourceName": "rsproxy-sparse",
+    "registry": "sparse+https://rsproxy.cn/index/"
+  },
+  "rustup": {
+    "distServer": "https://mirrors.tuna.tsinghua.edu.cn/rustup",
+    "updateRoot": "https://mirrors.tuna.tsinghua.edu.cn/rustup/rustup"
+  },
+  "go": {
+    "proxy": "https://goproxy.cn,direct",
+    "sumdb": "sum.golang.google.cn"
+  },
+  "maven": {
+    "mirrorId": "aliyun",
+    "mirrorUrl": "https://maven.aliyun.com/repository/public",
+    "mirrorOf": "*"
+  },
+  "gradle": {
+    "repositories": [
+      "https://maven.aliyun.com/repository/public",
+      "https://maven.aliyun.com/repository/google",
+      "https://maven.aliyun.com/repository/gradle-plugin"
+    ]
+  },
+  "nuget": {
+    "official": "https://api.nuget.org/v3/index.json",
+    "huawei": "https://mirrors.huaweicloud.com/repository/nuget/v3/index.json"
+  },
+  "msys2": {
+    "servers": [
+      "https://mirrors.aliyun.com/msys2/",
+      "https://mirrors.tuna.tsinghua.edu.cn/msys2/",
+      "https://mirrors.ustc.edu.cn/msys2/"
+    ]
+  }
+}

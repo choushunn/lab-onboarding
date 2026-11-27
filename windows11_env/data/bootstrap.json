@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "workspace": {
+    "root": "D:\\Workspace",
+    "fallbackRoot": "C:\\Workspace",
+    "directories": [
+      "Python",
+      "Java",
+      "STM32",
+      "Cpp",
+      "Web",
+      "Go",
+      "Rust",
+      "Docs"
+    ]
+  },
+  "paths": {
+    "programsRoot": "C:\\Programs",
+    "msys2": "C:\\Programs\\msys64",
+    "maven": "C:\\Programs\\apache-maven-3.9.12",
+    "gradle": "C:\\Programs\\gradle-9.4.1",
+    "vcpkg": "C:\\Programs\\vcpkg",
+    "armGnu": "C:\\Programs\\arm-gnu-toolchain-13.3.rel1-mingw-w64-i686-arm-none-eabi",
+    "pnpmStore": "D:\\.pnpm-store",
+    "pnpmStoreFallback": "C:\\Workspace\\.pnpm-store",
+    "terminalSettings": "{home}\\AppData\\Local\\Packages\\Microsoft.WindowsTerminal_8wekyb3d8bbwe\\LocalState\\settings.json",
+    "globalAgents": [
+      "{home}\\.codex\\AGENTS.md",
+      "{home}\\.claude\\CLAUDE.md",
+      "{home}\\.trae-cn\\user_rules\\rule-global.md"
+    ]
+  },
+  "proxy": {
+    "host": "127.0.0.1",
+    "port": 7890,
+    "noProxy": [
+      "localhost",
+      "127.0.0.1",
+      "::1",
+      "api.github.com"
+    ]
+  },
+  "ccs": {
+    "routePort": 15721
+  },
+  "terminal": {
+    "colorScheme": "Tango Dark",
+    "fontSize": 14,
+    "opacity": 49,
+    "useAcrylic": true,
+    "intenseTextStyle": "bright",
+    "theme": "system",
+    "useAcrylicInTabRow": true
+  },
+  "system": {
+    "longPaths": true,
+    "developerMode": true,
+    "defenderExclusions": [
+      "{workspaceRoot}",
+      "{programsRoot}",
+      "{home}\\AppData\\Local\\uv\\cache",
+      "{pnpmStore}",
+      "{home}\\.cargo",
+      "{home}\\.gradle",
+      "{home}\\.m2"
+    ]
+  },
+  "path": {
+    "machineHead": [],
+    "machineTail": [
+      "{msys2}\\ucrt64\\bin",
+      "{maven}\\bin",
+      "{gradle}\\bin",
+      "{armGnu}\\bin"
+    ],
+    "user": [
+      "{home}\\.local\\bin",
+      "%APPDATA%\\npm",
+      "{home}\\go\\bin",
+      "{home}\\.cargo\\bin",
+      "{vcpkg}",
+      "{home}\\.android\\Sdk\\platform-tools",
+      "{home}\\.dotnet\\tools"
+    ]
+  }
+}

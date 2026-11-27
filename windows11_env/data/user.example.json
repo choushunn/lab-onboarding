@@ -1,0 +1,8 @@
+{
+  "gitName": "<your-name>",
+  "gitEmail": "<your-email>",
+  "writeAiConfig": true,
+  "aiProvider": "<provider>",
+  "aiModel": "<model-id>",
+  "ccsRoutePort": 15721
+}

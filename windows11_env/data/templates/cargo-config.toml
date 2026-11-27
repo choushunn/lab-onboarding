@@ -1,0 +1,8 @@
+[source.crates-io]
+replace-with = '{{CARGO_SOURCE}}'
+
+[source.{{CARGO_SOURCE}}]
+registry = "{{CARGO_REGISTRY}}"
+
+[net]
+git-fetch-with-cli = true

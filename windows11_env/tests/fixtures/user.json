@@ -1,0 +1,8 @@
+{
+  "gitName": "Test User",
+  "gitEmail": "test@example.com",
+  "writeAiConfig": true,
+  "aiProvider": "ExampleProvider",
+  "aiModel": "example-model",
+  "ccsRoutePort": 15721
+}

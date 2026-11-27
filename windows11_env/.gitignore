@@ -1,0 +1,10 @@
+logs/
+data/user.json
+.venv/
+__pycache__/
+*.pyc
+build/
+.trae/
+.screenshots/
+installers/*
+!installers/.gitkeep

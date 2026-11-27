@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "packages": [
+    { "id": "voidtools.Everything", "name": "Everything", "provider": "winget", "packageId": "voidtools.Everything", "stage": "system", "required": false },
+    { "id": "Insecure.Nmap", "name": "Nmap", "provider": "winget", "packageId": "Insecure.Nmap", "stage": "system", "required": false },
+    { "id": "Rizonesoft.Notepad3", "name": "Notepad3", "provider": "winget", "packageId": "Rizonesoft.Notepad3", "stage": "system", "required": false },
+    { "id": "Snipaste", "name": "Snipaste", "provider": "localInstaller", "file": "Snipaste-2.11.3-x64-Setup.exe", "args": ["/S", "/D=C:\\Programs\\Snipaste"], "registryName": "Snipaste*", "stage": "system", "required": false },
+    { "id": "UninstallTool", "name": "Uninstall Tool", "provider": "localInstaller", "file": "UninstallTool_3.7.1.5699_Setup.exe", "args": ["/S", "/D=C:\\Programs\\UninstallTool"], "registryName": "Uninstall Tool*", "stage": "system", "required": false },
+    { "id": "CharlesMilette.TranslucentTB", "name": "TranslucentTB", "provider": "winget", "packageId": "CharlesMilette.TranslucentTB", "stage": "system", "required": false },
+    { "id": "t1m0thyj.WinDynamicDesktop", "name": "WinDynamicDesktop", "provider": "winget", "packageId": "t1m0thyj.WinDynamicDesktop", "stage": "system", "required": false },
+    { "id": "WinSCP.WinSCP", "name": "WinSCP", "provider": "winget", "packageId": "WinSCP.WinSCP", "stage": "system", "required": false },
+    { "id": "Microsoft.Office", "name": "Microsoft 365", "provider": "winget", "packageId": "Microsoft.Office", "stage": "system", "required": false },
+    { "id": "OpenAI.ChatGPT", "name": "OpenAI ChatGPT", "provider": "winget", "packageId": "OpenAI.ChatGPT", "stage": "system", "required": false },
+    { "id": "Tencent.TencentMeeting", "name": "Tencent Meeting", "provider": "winget", "packageId": "Tencent.TencentMeeting", "stage": "system", "required": false },
+    { "id": "Tencent.TIM", "name": "TIM", "provider": "winget", "packageId": "Tencent.TIM", "stage": "system", "required": false },
+    { "id": "NetEase.UURemote", "name": "UU远程", "provider": "winget", "packageId": "NetEase.UURemote", "stage": "system", "required": false },
+    { "id": "Tencent.WeChat.Universal", "name": "WeChat", "provider": "winget", "packageId": "Tencent.WeChat.Universal", "stage": "system", "required": false },
+    { "id": "Tencent.WorkBuddy", "name": "WorkBuddy", "provider": "winget", "packageId": "Tencent.WorkBuddy", "stage": "system", "required": false },
+    { "id": "Baidu.BaiduNetdisk", "name": "百度网盘", "provider": "winget", "packageId": "Baidu.BaiduNetdisk", "stage": "system", "required": false },
+    { "id": "Google.Chrome", "name": "Google Chrome", "provider": "winget", "packageId": "Google.Chrome", "stage": "system", "required": false },
+    { "id": "Tonec.InternetDownloadManager", "name": "Internet Download Manager", "provider": "winget", "packageId": "Tonec.InternetDownloadManager", "stage": "system", "required": false },
+    { "id": "qBittorrent.qBittorrent", "name": "qBittorrent", "provider": "winget", "packageId": "qBittorrent.qBittorrent", "stage": "system", "required": false },
+    { "id": "OBSProject.OBSStudio", "name": "OBS Studio", "provider": "winget", "packageId": "OBSProject.OBSStudio", "stage": "system", "required": false },
+    { "id": "Daum.PotPlayer", "name": "PotPlayer", "provider": "winget", "packageId": "Daum.PotPlayer", "stage": "system", "required": false },
+    { "id": "JLC.LCEDA.Pro", "name": "嘉立创EDA专业版", "provider": "winget", "packageId": "JLC.LCEDA.Pro", "stage": "system", "required": false }
+  ]
+}

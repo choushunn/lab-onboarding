@@ -44,6 +44,16 @@
 ├── resources/
 │   ├── 常见问题.md
 │   └── 常用工具推荐.md
+├── windows11_env/
+│   ├── README.md
+│   ├── bootstrap.ps1
+│   ├── Justfile
+│   ├── AGENTS.md
+│   ├── data/
+│   ├── docs/
+│   ├── src/
+│   ├── scripts/
+│   └── tests/
 └── .gitignore
 ```
 
@@ -52,6 +62,10 @@
 1. 按阶段顺序学习，每个阶段有详细指南和验收标准
 2. 遇到问题先查阅 [常见问题](resources/常见问题.md)
 3. [常用工具推荐](resources/常用工具推荐.md) 为参考资料，供选择
+
+## 自动化方式
+
+`phases/` 是手动路径，按章节逐步操作；`windows11_env/` 是同一套环境的自动化实现，入口为 `bootstrap.ps1`，支持演练、验收与回滚，适合新机一次性搭建。两者任选其一，细节见 [windows11_env/README.md](windows11_env/README.md)。
 
 ## 参考链接
 

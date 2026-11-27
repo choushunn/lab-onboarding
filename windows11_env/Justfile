@@ -1,0 +1,71 @@
+# 验证入口。代理与人共用同一组命令，避免从文档复制长命令行。
+set shell := ["pwsh", "-NoProfile", "-Command"]
+
+# 列出所有可执行目标
+default:
+    @just --list
+
+# 新机搭建：开发环境 + 系统优化
+bootstrap:
+    pwsh -NoProfile -File bootstrap.ps1 -Profile All
+
+# 新机搭建：只输出计划，不提权、不修改系统
+bootstrap-dry:
+    pwsh -NoProfile -File bootstrap.ps1 -Profile All -DryRun -NoElevate
+
+# 验收：按开发环境检查命令、配置与镜像
+verify:
+    pwsh -NoProfile -File bootstrap.ps1 -Profile Dev -Stages Verify
+
+# 回滚最近一次运行的配置变更（不卸载软件）
+rollback:
+    pwsh -NoProfile -File bootstrap.ps1 -Rollback Last
+
+# Python 项目：单元测试
+verify-py:
+    uv run pytest -q
+
+# C/C++ 项目：构建 + ctest
+verify-cpp:
+    cmake --build build
+    ctest --test-dir build --output-on-failure
+
+# 嵌入式固件：构建（内存受限时固定 -j 8）
+verify-fw:
+    cmake --build build -j 8
+
+# JS/TS 项目：测试
+verify-js:
+    pnpm test
+
+# Go 项目：测试
+verify-go:
+    go test ./...
+
+# Rust 项目：测试
+verify-rs:
+    cargo test
+
+# C# 项目：测试
+verify-cs:
+    dotnet test
+
+# 开发环境体检：命令、模块、进程环境与用户目录
+doctor:
+    & 'scripts/check-env.ps1'
+
+# PowerShell 脚本静态检查
+lint-ps:
+    $findings = @(); $parseErrors = @(); foreach ($path in @('src', 'scripts', 'bootstrap.ps1')) { $findings += Invoke-ScriptAnalyzer -Path $path -Settings scripts/PSScriptAnalyzerSettings.psd1 -Severity Error; $files = if (Test-Path -LiteralPath $path -PathType Container) { Get-ChildItem -LiteralPath $path -Recurse -File -Include '*.ps1', '*.psm1' } else { @(Get-Item -LiteralPath $path) }; foreach ($file in $files) { $tokens = $null; $errors = $null; [System.Management.Automation.Language.Parser]::ParseFile($file.FullName, [ref]$tokens, [ref]$errors) | Out-Null; $parseErrors += $errors } }; if ($findings.Count -gt 0 -or $parseErrors.Count -gt 0) { $findings | Format-Table -AutoSize | Out-Host; $parseErrors | Format-Table -AutoSize | Out-Host; exit 1 }
+
+# PowerShell 脚本测试
+test-ps:
+    $result = Invoke-Pester -Path tests -Output Normal -PassThru; if ($result.FailedCount -gt 0) { exit 1 }
+
+# 提交前门禁：ruff + gitleaks + 体检 + PowerShell 检查
+precommit:
+    ruff check .
+    gitleaks protect --staged --no-banner
+    just doctor
+    just lint-ps
+    just test-ps
