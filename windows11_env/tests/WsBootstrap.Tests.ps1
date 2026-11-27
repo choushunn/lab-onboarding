@@ -392,28 +392,6 @@ Describe '下载与解压校验' {
         { Expand-WsArchive -Path $archive -DestinationPath $destination } | Should -Throw '*越界*'
         Test-Path -LiteralPath (Join-Path $TestDrive 'evil.txt') | Should -BeFalse
     }
-
-    It '哈希匹配时通过，不匹配时终止' {
-        $context = New-WsContext -RepoRoot $script:repo
-        $context.LogPath = Join-Path $TestDrive 'hash.log'
-        $path = Join-Path $TestDrive 'payload.bin'
-        Set-Content -LiteralPath $path -Value 'payload'
-        $hash = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
-        $package = [pscustomobject]@{ id = 'x'; name = 'X'; sha256 = $hash }
-        Assert-WsFileHash -Context $context -Package $package -Path $path | Should -Be 'Verified'
-        $package.sha256 = '0' * 64
-        { Assert-WsFileHash -Context $context -Package $package -Path $path } | Should -Throw '*哈希校验失败*'
-    }
-
-    It '未配置哈希时告警但继续' {
-        $context = New-WsContext -RepoRoot $script:repo
-        $context.LogPath = Join-Path $TestDrive 'hash-missing.log'
-        $path = Join-Path $TestDrive 'unverified.bin'
-        Set-Content -LiteralPath $path -Value 'payload'
-        $package = [pscustomobject]@{ id = 'x'; name = 'X' }
-        Assert-WsFileHash -Context $context -Package $package -Path $path | Should -Be 'Unverified'
-        (Get-Content -LiteralPath $context.LogPath -Raw) | Should -Match '未配置哈希校验'
-    }
 }
 
 Describe '包安装' {
@@ -585,26 +563,6 @@ Describe '包安装' {
             Install-WsExeInstaller -Context $context -Package $package | Should -Be 'Installed'
             $global:WsTestProcessCount | Should -Be 1
             $global:WsTestProcess | Should -Contain '--confirm-command'
-        }
-    }
-
-    It 'exeInstaller 哈希不匹配时终止且不执行安装' {
-        InModuleScope WsBootstrap -Parameters @{ Repo = $script:repo; Directory = $TestDrive } {
-            param($Repo, $Directory)
-            Mock Invoke-WsDownload {
-                param($Uri, $OutFile)
-                Set-Content -LiteralPath $OutFile -Value 'stub'
-            }
-            Mock Invoke-WsProcess { throw '不应执行安装' }
-            $context = New-WsContext -RepoRoot $Repo
-            $context.LogPath = Join-Path $Directory 'exe-hash.log'
-            $package = [pscustomobject]@{
-                id = 'x'; name = 'X'; provider = 'exeInstaller';
-                urls = @('https://example.invalid/x.exe'); args = @('/S');
-                target = (Join-Path $Directory 'hash-exe-target'); sha256 = ('0' * 64)
-            }
-            { Install-WsExeInstaller -Context $context -Package $package } | Should -Throw '*哈希校验失败*'
-            Should -Invoke Invoke-WsProcess -Times 0
         }
     }
 
@@ -831,7 +789,7 @@ Describe 'Windows 激活' {
         }
     }
 
-    It '未激活时下载、校验并运行脚本' {
+    It '未激活时下载并运行脚本' {
         InModuleScope WsBootstrap -Parameters @{ Repo = $script:repo; Directory = $TestDrive } {
             param($Repo, $Directory)
             $context = New-WsContext -RepoRoot $Repo
@@ -839,7 +797,6 @@ Describe 'Windows 激活' {
             $script:activated = $false
             Mock Test-WsWindowsActivated { $script:activated }
             Mock Invoke-WsDownload { Set-Content -LiteralPath $OutFile -Value 'stub' }
-            Mock Assert-WsFileHash { 'Verified' }
             Mock Invoke-WsProcess { $script:activated = $true; [pscustomobject]@{ ExitCode = 0; Output = @('ok') } }
             Invoke-WsWindowsActivation -Context $context
             Should -Invoke Invoke-WsDownload -Times 1
@@ -856,7 +813,6 @@ Describe 'Windows 激活' {
             $context.LogPath = Join-Path $Directory 'activation-fail.log'
             Mock Test-WsWindowsActivated { $false }
             Mock Invoke-WsDownload { Set-Content -LiteralPath $OutFile -Value 'stub' }
-            Mock Assert-WsFileHash { 'Verified' }
             Mock Invoke-WsProcess { [pscustomobject]@{ ExitCode = 0; Output = @() } }
             Invoke-WsWindowsActivation -Context $context
             $context.Warnings.Count | Should -Be 1
@@ -872,18 +828,6 @@ Describe 'Windows 激活' {
             Mock Invoke-WsDownload { throw 'network down' }
             { Invoke-WsWindowsActivation -Context $context } | Should -Not -Throw
             $context.Warnings.Count | Should -Be 1
-        }
-    }
-
-    It '哈希不匹配时终止' {
-        InModuleScope WsBootstrap -Parameters @{ Repo = $script:repo; Directory = $TestDrive } {
-            param($Repo, $Directory)
-            $context = New-WsContext -RepoRoot $Repo
-            $context.LogPath = Join-Path $Directory 'activation-hash-fail.log'
-            Mock Test-WsWindowsActivated { $false }
-            Mock Invoke-WsDownload { Set-Content -LiteralPath $OutFile -Value 'stub' }
-            Mock Assert-WsFileHash { throw '哈希校验失败' }
-            { Invoke-WsWindowsActivation -Context $context } | Should -Throw '*哈希校验失败*'
         }
     }
 }

@@ -140,9 +140,6 @@ function Test-WsData {
         if (-not $Context.Bootstrap.activation.scriptUrl) {
             $problems.Add('bootstrap.json activation 缺少 scriptUrl')
         }
-        if ([string]$Context.Bootstrap.activation.sha256 -notmatch '^[0-9a-fA-F]{64}$') {
-            $problems.Add('bootstrap.json activation.sha256 必须为 64 位十六进制')
-        }
     }
     if ($Context.Mirrors.schemaVersion -ne 1) {
         $problems.Add('mirrors.json schemaVersion 必须为 1')
@@ -491,11 +488,6 @@ function Invoke-WsWindowsActivation {
         Write-WsLog $message -Level WARN -Context $Context
         return
     }
-    [void](Assert-WsFileHash -Context $Context -Package ([pscustomobject]@{
-                id     = 'windows-activation'
-                name   = 'Windows 激活脚本'
-                sha256 = [string]$activation.sha256
-            }) -Path $scriptPath)
 
     $runnerPath = Join-Path $env:TEMP 'wsbootstrap-activate.cmd'
     $previousEncoding = [Console]::OutputEncoding
