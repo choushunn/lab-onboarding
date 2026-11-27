@@ -78,7 +78,7 @@
 
 ## 自动化方式
 
-`phases/` 是手动路径，按章节逐步操作；`windows11_env/` 面向 Windows 新机，入口为 `bootstrap.ps1`，支持演练、验收与回滚，细节见 [windows11_env/README.md](windows11_env/README.md)；`ubuntu_env/` 面向 Ubuntu 服务器初始化。仓库级规则见 [AGENTS.md](AGENTS.md)，可执行流程见 `skills/`。
+`phases/` 是手动路径，按章节逐步操作；`windows11_env/` 面向 Windows 新机，入口为 `bootstrap.ps1`，支持演练、验收与回滚，细节见 [windows11_env/README.md](windows11_env/README.md)。全新 Windows 11 首次运行可用系统自带的 Windows PowerShell 5.1 启动入口；入口会安装 PowerShell 7 与 just，再以 pwsh 重启。`ubuntu_env/` 面向 Ubuntu 服务器初始化。仓库级规则见 [AGENTS.md](AGENTS.md)，可执行流程见 `skills/`。
 
 ## 参考链接
 

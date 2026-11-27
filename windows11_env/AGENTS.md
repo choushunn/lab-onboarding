@@ -42,7 +42,7 @@
 
 ## 验证命令
 
-统一入口是 `just`。没有 Justfile 的项目按第二列命令执行。
+统一入口是 `just`。全新机器首次运行使用 `powershell.exe -NoProfile -ExecutionPolicy Bypass -File bootstrap.ps1`；入口会安装 PowerShell 7 与 just。没有 Justfile 的项目按第二列命令执行。
 
 | 场景 | 命令 | 判定 |
 |---|---|---|

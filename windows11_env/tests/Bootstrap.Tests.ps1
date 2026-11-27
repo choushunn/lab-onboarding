@@ -32,6 +32,24 @@ Describe '入口集成' {
         Remove-Item -LiteralPath (Join-Path $script:repo "logs\runs\$runId") -Recurse -Force -ErrorAction SilentlyContinue
     }
 
+    It 'Windows PowerShell 5.1 下以 pwsh 重启并传递参数' {
+        $powershell = Get-Command 'powershell.exe' -ErrorAction SilentlyContinue
+        if (-not $powershell) {
+            Set-ItResult -Skipped -Because '未找到 Windows PowerShell'
+            return
+        }
+        $runId = 'pester-ps51'
+        $output = & $powershell.Source -NoProfile -ExecutionPolicy Bypass -File $script:bootstrap `
+            -Profile All -DryRun -NoElevate -UserFile $script:fixture -RunId $runId 2>&1
+        $code = $LASTEXITCODE
+        $text = $output | Out-String
+        $code | Should -Be 0 -Because $text
+        $text | Should -Match '以 PowerShell 7 重启入口'
+        $text | Should -Match '阶段计划'
+        $text | Should -Match $runId
+        Remove-Item -LiteralPath (Join-Path $script:repo "logs\runs\$runId") -Recurse -Force -ErrorAction SilentlyContinue
+    }
+
     It '非 ASCII 用户目录在提权前退出 2' {
         $originalProfile = $env:USERPROFILE
         $originalName = $env:USERNAME
