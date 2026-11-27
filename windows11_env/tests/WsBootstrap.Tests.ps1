@@ -572,6 +572,16 @@ Describe 'pacman 密钥环' {
         }
     }
 
+    It 'DryRun 未安装 MSYS2 时返回 Planned' {
+        InModuleScope WsBootstrap -Parameters @{ Repo = $script:repo; Directory = $TestDrive } {
+            param($Repo, $Directory)
+            $context = New-WsContext -RepoRoot $Repo -DryRun
+            $context.LogPath = Join-Path $Directory 'pacman-key-dryrun.log'
+            $bash = Join-Path $Directory 'missing-msys2\usr\bin\bash.exe'
+            Initialize-WsPacman -Context $context -BashPath $bash | Should -Be 'Planned'
+        }
+    }
+
     It '已初始化时跳过 init' {
         InModuleScope WsBootstrap -Parameters @{ Repo = $script:repo; Directory = $TestDrive } {
             param($Repo, $Directory)

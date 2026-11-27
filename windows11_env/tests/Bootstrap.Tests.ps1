@@ -13,7 +13,7 @@ Describe '入口集成' {
             -Profile All -DryRun -NoElevate -UserFile $script:fixture -RunId $runId 2>&1
         $code = $LASTEXITCODE
         $text = $output | Out-String
-        $code | Should -Be 0
+        $code | Should -Be 0 -Because $text
         $text | Should -Match '阶段计划'
         $text | Should -Match '人工项'
         $text | Should -Match '退出码：0'

@@ -468,15 +468,15 @@ function Initialize-WsPacman {
         [string]$BashPath
     )
 
+    if ($Context.DryRun) {
+        Write-WsLog 'DryRun：将检查并初始化 pacman 密钥环' -Context $Context
+        return 'Planned'
+    }
     if (-not $BashPath) {
         $BashPath = Join-Path $Context.Bootstrap.paths.msys2 'usr\bin\bash.exe'
     }
     if (-not (Test-Path -LiteralPath $BashPath)) {
         throw "MSYS2 未安装：$BashPath"
-    }
-    if ($Context.DryRun) {
-        Write-WsLog 'DryRun：将检查并初始化 pacman 密钥环' -Context $Context
-        return 'Planned'
     }
     $check = Invoke-WsProcess -FilePath $BashPath -Arguments @('-lc', 'pacman-key --list-keys >/dev/null 2>&1')
     if ($check.ExitCode -eq 0) {

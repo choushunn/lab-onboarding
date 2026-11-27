@@ -164,6 +164,6 @@ Describe '隐私' {
 
     It 'data/user.json 已 gitignore' {
         $ignore = Get-Content -LiteralPath (Join-Path $script:repo '.gitignore') -Raw
-        $ignore | Should -Match '(?m)^data/user\.json$'
+        $ignore | Should -Match '(?m)^data/user\.json\r?$'
     }
 }
