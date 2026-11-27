@@ -235,14 +235,27 @@ function Initialize-WsNodeToolchain {
         Write-WsLog 'DryRun：将执行 corepack enable、pnpm 激活与 store 配置' -Context $Context
         return
     }
-    if (-not (Get-Command 'corepack' -ErrorAction SilentlyContinue)) {
+    $corepackPath = (Get-Command 'corepack' -ErrorAction SilentlyContinue).Source
+    if (-not $corepackPath) {
         $install = Invoke-WsProcess -FilePath 'npm' -Arguments @('install', '-g', 'corepack')
         if ($install.ExitCode -ne 0) {
             throw 'corepack 安装失败'
         }
+        $prefix = @((Invoke-WsProcess -FilePath 'npm' -Arguments @('prefix', '-g')).Output) | Select-Object -Last 1
+        $corepackPath = Join-Path ([string]$prefix) 'corepack.cmd'
+        if (-not (Test-Path -LiteralPath $corepackPath)) {
+            throw 'corepack 安装后未找到 corepack.cmd'
+        }
+    }
+    $nodeDir = Split-Path -Parent ((Get-Command 'node').Source)
+    if (Test-Path -LiteralPath (Join-Path $nodeDir 'pnpm.cmd')) {
+        $enable = Invoke-WsProcess -FilePath $corepackPath -Arguments @('enable', '--install-directory', $nodeDir)
+        if ($enable.ExitCode -ne 0) {
+            Write-WsLog "覆盖 $nodeDir 下的 corepack shim 失败（需要管理员权限）；pnpm 不可用时请运行 just bootstrap" -Level WARN -Context $Context
+        }
     }
     foreach ($arguments in @(@('enable'), @('prepare', 'pnpm@latest', '--activate'))) {
-        $result = Invoke-WsProcess -FilePath 'corepack' -Arguments $arguments
+        $result = Invoke-WsProcess -FilePath $corepackPath -Arguments $arguments
         if ($result.ExitCode -ne 0) {
             throw ('corepack ' + ($arguments -join ' ') + ' 失败')
         }

@@ -9,7 +9,7 @@
     { "id": "Microsoft.PowerToys", "name": "PowerToys", "provider": "winget", "packageId": "Microsoft.PowerToys", "stage": "base", "scope": "user", "required": true },
     { "id": "Kitware.CMake", "name": "CMake", "provider": "winget", "packageId": "Kitware.CMake", "stage": "base", "scope": "machine", "required": true, "verifyCommand": "cmake", "verifyArgs": ["--version"] },
     { "id": "Ninja-build.Ninja", "name": "Ninja", "provider": "winget", "packageId": "Ninja-build.Ninja", "stage": "base", "scope": "user", "required": true, "verifyCommand": "ninja", "verifyArgs": ["--version"] },
-    { "id": "OpenJS.NodeJS.22", "name": "Node.js 22", "provider": "winget", "packageId": "OpenJS.NodeJS.22", "stage": "base", "scope": "machine", "required": true, "verifyCommand": "node", "verifyArgs": ["--version"] },
+    { "id": "OpenJS.NodeJS.LTS", "name": "Node.js LTS", "provider": "winget", "packageId": "OpenJS.NodeJS.LTS", "stage": "base", "scope": "machine", "required": true, "verifyCommand": "node", "verifyArgs": ["--version"] },
     { "id": "Casey.Just", "name": "just", "provider": "winget", "packageId": "Casey.Just", "stage": "base", "scope": "user", "required": true, "verifyCommand": "just", "verifyArgs": ["--version"] },
     { "id": "Gitleaks.Gitleaks", "name": "gitleaks", "provider": "winget", "packageId": "Gitleaks.Gitleaks", "stage": "base", "scope": "user", "required": true, "verifyCommand": "gitleaks", "verifyArgs": ["version"] },
     { "id": "ast-grep.ast-grep", "name": "ast-grep", "provider": "winget", "packageId": "ast-grep.ast-grep", "stage": "base", "scope": "user", "required": true, "verifyCommand": "ast-grep", "verifyArgs": ["--version"] },
