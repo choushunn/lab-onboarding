@@ -61,6 +61,12 @@
       "target": "C:\\Program Files\\Huorong"
     },
     {
+      "name": "Windows 系统激活",
+      "reason": "KMS 激活，需管理员权限执行 slmgr 命令",
+      "source": "https://kms.cangshui.net/",
+      "target": "Windows 许可证"
+    },
+    {
       "name": "清单外 Agent Skills",
       "reason": "白名单之外的技能按需从 skills.sh 或插件市场安装",
       "source": "https://skills.sh/",
