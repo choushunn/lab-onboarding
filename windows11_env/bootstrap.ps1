@@ -176,4 +176,10 @@ $context.Manual.items | Where-Object { Test-WsDirectionMatch -Context $context -
 
 Write-Host ("日志与清单：{0}" -f $context.RunDirectory)
 Write-Host ("退出码：{0}" -f $exitCode)
+
+if ($Elevated -and -not [Console]::IsInputRedirected) {
+    Write-Host ''
+    Read-Host '按 Enter 关闭窗口' | Out-Null
+}
+
 exit $exitCode
