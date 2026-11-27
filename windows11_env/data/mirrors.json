@@ -18,6 +18,14 @@
   "corepack": {
     "registry": "https://mirrors.huaweicloud.com/repository/npm/"
   },
+  "winget": {
+    "sourceName": "winget",
+    "sources": [
+      "https://mirrors.ustc.edu.cn/winget-source/",
+      "https://mirrors.zju.edu.cn/winget-source"
+    ],
+    "official": "https://cdn.winget.microsoft.com/cache"
+  },
   "cargo": {
     "sourceName": "rsproxy-sparse",
     "registry": "sparse+https://rsproxy.cn/index/"

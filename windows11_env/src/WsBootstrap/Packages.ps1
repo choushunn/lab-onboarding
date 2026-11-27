@@ -106,6 +106,162 @@ function Test-WsWingetInstalled {
     $result.ExitCode -eq 0
 }
 
+function Get-WsWingetSourceUrl {
+    [CmdletBinding()]
+    param([string]$Name = 'winget')
+
+    $result = Invoke-WsProcess -FilePath 'winget' -Arguments @('source', 'export')
+    if ($result.ExitCode -ne 0) {
+        return $null
+    }
+    foreach ($line in @($result.Output)) {
+        $text = [string]$line
+        if ([string]::IsNullOrWhiteSpace($text)) {
+            continue
+        }
+        try {
+            $source = $text | ConvertFrom-Json
+        } catch {
+            continue
+        }
+        if ($source.Name -eq $Name -and $source.Arg) {
+            return [string]$source.Arg
+        }
+    }
+    return $null
+}
+
+function Test-WsWingetMirrorUrl {
+    [CmdletBinding()]
+    param(
+        [AllowNull()][string]$Url,
+        [object]$Config
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Url) -or -not $Config) {
+        return $false
+    }
+    $current = $Url.TrimEnd('/')
+    foreach ($source in @($Config.sources)) {
+        if ($current -eq ([string]$source).TrimEnd('/')) {
+            return $true
+        }
+    }
+    return $false
+}
+
+function Set-WsWingetSources {
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)][object]$Context)
+
+    if ($Context.WingetSourceChecked) {
+        return $Context.WingetSource
+    }
+    $Context.WingetSourceChecked = $true
+    $config = $Context.Mirrors.winget
+    if (-not $config -or @($config.sources).Count -eq 0) {
+        $Context.WingetSource = 'Official'
+        return $Context.WingetSource
+    }
+    $name = if ($config.sourceName) { [string]$config.sourceName } else { 'winget' }
+    $currentUrl = Get-WsWingetSourceUrl -Name $name
+    if (Test-WsWingetMirrorUrl -Url $currentUrl -Config $config) {
+        $Context.WingetSource = 'Mirror'
+        Write-WsLog "winget 已使用镜像源：$currentUrl" -Level SKIP -Context $Context
+        return $Context.WingetSource
+    }
+    if ($Context.DryRun) {
+        $Context.WingetSource = 'Planned'
+        $preview = @($config.sources)[0]
+        Write-WsLog "DryRun：将把 winget 源替换为镜像 $preview" -Context $Context
+        return $Context.WingetSource
+    }
+
+    $previousUrl = $currentUrl
+    if ($previousUrl) {
+        $remove = Invoke-WsProcess -FilePath 'winget' -Arguments @('source', 'remove', '--name', $name)
+        if ($remove.ExitCode -ne 0) {
+            $Context.WingetSource = 'Official'
+            Write-WsLog "winget 源移除失败，继续使用当前源：$previousUrl" -Level WARN -Context $Context
+            return $Context.WingetSource
+        }
+        Write-WsLog "移除 winget 源：$previousUrl" -Context $Context
+    }
+
+    foreach ($url in @($config.sources)) {
+        $add = Invoke-WsProcess -FilePath 'winget' -Arguments @(
+            'source', 'add', '--name', $name, '--arg', [string]$url,
+            '--trust-level', 'trusted', '--accept-source-agreements'
+        )
+        if ($add.ExitCode -eq 0) {
+            $Context.WingetSource = 'Mirror'
+            Add-WsChange -Context $Context -Entry @{
+                Kind        = 'WingetSource'
+                Name        = $name
+                PreviousUrl = [string]$previousUrl
+                Url         = [string]$url
+                Action      = 'Replace'
+            }
+            Write-WsLog "winget 源已替换为镜像：$url" -Context $Context
+            return $Context.WingetSource
+        }
+        Write-WsLog "winget 镜像源添加失败，尝试下一个：$url" -Level WARN -Context $Context
+    }
+
+    if ($previousUrl) {
+        $restore = Invoke-WsProcess -FilePath 'winget' -Arguments @(
+            'source', 'add', '--name', $name, '--arg', $previousUrl,
+            '--trust-level', 'trusted', '--accept-source-agreements'
+        )
+        if ($restore.ExitCode -eq 0) {
+            $Context.WingetSource = 'Official'
+            Write-WsLog "winget 镜像源不可用，已恢复原源：$previousUrl" -Level WARN -Context $Context
+            return $Context.WingetSource
+        }
+        throw "winget 源替换失败，且无法恢复原源：$previousUrl"
+    }
+    $Context.WingetSource = 'Official'
+    Write-WsLog 'winget 镜像源不可用，且没有可恢复的源' -Level WARN -Context $Context
+    return $Context.WingetSource
+}
+
+function Restore-WsWingetSource {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][object]$Context,
+        [string]$Name = 'winget',
+        [AllowEmptyString()][string]$OfficialUrl
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Name)) {
+        $Name = 'winget'
+    }
+    try {
+        $remove = Invoke-WsProcess -FilePath 'winget' -Arguments @('source', 'remove', '--name', $Name)
+        if ($remove.ExitCode -ne 0) {
+            Write-WsLog "回滚移除 winget 源失败：$Name" -Level WARN -Context $Context
+        }
+    } catch {
+        Write-WsLog "回滚移除 winget 源失败：$Name" -Level WARN -Context $Context
+    }
+    if ([string]::IsNullOrWhiteSpace($OfficialUrl)) {
+        return
+    }
+    try {
+        $add = Invoke-WsProcess -FilePath 'winget' -Arguments @(
+            'source', 'add', '--name', $Name, '--arg', $OfficialUrl,
+            '--trust-level', 'trusted', '--accept-source-agreements'
+        )
+        if ($add.ExitCode -eq 0) {
+            Write-WsLog "回滚恢复 winget 源：$OfficialUrl" -Context $Context
+        } else {
+            Write-WsLog "回滚恢复 winget 源失败：$OfficialUrl" -Level WARN -Context $Context
+        }
+    } catch {
+        Write-WsLog "回滚恢复 winget 源失败：$OfficialUrl" -Level WARN -Context $Context
+    }
+}
+
 function Install-WsWingetPackage {
     [CmdletBinding()]
     param(

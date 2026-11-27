@@ -429,6 +429,7 @@ Describe '包安装' {
             $global:WsTestProcess | Should -Contain '--accept-source-agreements'
             $global:WsTestProcess | Should -Contain '--accept-package-agreements'
             $global:WsTestProcess | Should -Contain '-e'
+            $global:WsTestProcess | Should -Not -Contain '--source'
         }
     }
 
@@ -600,6 +601,154 @@ Describe '包安装' {
 
             Mock Test-WsPortListening { $true }
             Install-WsUvPython -Context $context -Package $package | Should -Be 'Installed'
+        }
+    }
+}
+
+Describe 'winget 镜像源' {
+    It '替换官方源并记录原地址' {
+        InModuleScope WsBootstrap -Parameters @{ Repo = $script:repo; Directory = $TestDrive } {
+            param($Repo, $Directory)
+            $context = New-WsContext -RepoRoot $Repo
+            $context.LogPath = Join-Path $Directory 'winget-source.log'
+            $context.ManifestPath = Join-Path $Directory 'winget-source-manifest.json'
+            $global:WsWingetCalls = [System.Collections.Generic.List[string]]::new()
+            Mock Invoke-WsProcess {
+                param($FilePath, $Arguments)
+                $text = ($Arguments -join ' ')
+                $global:WsWingetCalls.Add($text)
+                if ($text -eq 'source export') {
+                    return [pscustomobject]@{
+                        ExitCode = 0
+                        Output   = @('{"Arg":"https://cdn.winget.microsoft.com/cache","Name":"winget"}')
+                    }
+                }
+                if ($text -like 'source remove*') {
+                    return [pscustomobject]@{ ExitCode = 0; Output = @() }
+                }
+                if ($text -like 'source add*ustc*') {
+                    return [pscustomobject]@{ ExitCode = 0; Output = @() }
+                }
+                return [pscustomobject]@{ ExitCode = 1; Output = @() }
+            }
+            Set-WsWingetSources -Context $context | Should -Be 'Mirror'
+            $context.WingetSource | Should -Be 'Mirror'
+            $calls = $global:WsWingetCalls -join '|'
+            $calls | Should -Match 'source remove --name winget'
+            $calls | Should -Match 'source add --name winget --arg https://mirrors\.ustc\.edu\.cn/winget-source/'
+            $manifest = Get-Content -LiteralPath $context.ManifestPath -Raw | ConvertFrom-Json
+            @($manifest.entries).Count | Should -Be 1
+            @($manifest.entries)[0].Kind | Should -Be 'WingetSource'
+            @($manifest.entries)[0].PreviousUrl | Should -Be 'https://cdn.winget.microsoft.com/cache'
+            @($manifest.entries)[0].Url | Should -Be 'https://mirrors.ustc.edu.cn/winget-source/'
+        }
+    }
+
+    It 'DryRun 不修改源' {
+        InModuleScope WsBootstrap -Parameters @{ Repo = $script:repo; Directory = $TestDrive } {
+            param($Repo, $Directory)
+            Mock Invoke-WsProcess {
+                param($FilePath, $Arguments)
+                if (($Arguments -join ' ') -eq 'source export') {
+                    return [pscustomobject]@{
+                        ExitCode = 0
+                        Output   = @('{"Arg":"https://cdn.winget.microsoft.com/cache","Name":"winget"}')
+                    }
+                }
+                throw 'DryRun 不应修改源'
+            }
+            $context = New-WsContext -RepoRoot $Repo -DryRun
+            $context.LogPath = Join-Path $Directory 'winget-source-dry.log'
+            Set-WsWingetSources -Context $context | Should -Be 'Planned'
+            $context.WingetSource | Should -Be 'Planned'
+        }
+    }
+
+    It '已是镜像源时跳过' {
+        InModuleScope WsBootstrap -Parameters @{ Repo = $script:repo; Directory = $TestDrive } {
+            param($Repo, $Directory)
+            Mock Invoke-WsProcess {
+                param($FilePath, $Arguments)
+                if (($Arguments -join ' ') -eq 'source export') {
+                    return [pscustomobject]@{
+                        ExitCode = 0
+                        Output   = @('{"Arg":"https://mirrors.ustc.edu.cn/winget-source/","Name":"winget"}')
+                    }
+                }
+                throw '不应修改已配置的镜像源'
+            }
+            $context = New-WsContext -RepoRoot $Repo
+            $context.LogPath = Join-Path $Directory 'winget-source-present.log'
+            Set-WsWingetSources -Context $context | Should -Be 'Mirror'
+            $context.WingetSource | Should -Be 'Mirror'
+        }
+    }
+
+    It '镜像添加失败时恢复原源' {
+        InModuleScope WsBootstrap -Parameters @{ Repo = $script:repo; Directory = $TestDrive } {
+            param($Repo, $Directory)
+            $context = New-WsContext -RepoRoot $Repo
+            $context.LogPath = Join-Path $Directory 'winget-source-fallback.log'
+            $context.ManifestPath = Join-Path $Directory 'winget-source-fallback-manifest.json'
+            $global:WsWingetCalls = [System.Collections.Generic.List[string]]::new()
+            Mock Invoke-WsProcess {
+                param($FilePath, $Arguments)
+                $text = ($Arguments -join ' ')
+                $global:WsWingetCalls.Add($text)
+                if ($text -eq 'source export') {
+                    return [pscustomobject]@{
+                        ExitCode = 0
+                        Output   = @('{"Arg":"https://cdn.winget.microsoft.com/cache","Name":"winget"}')
+                    }
+                }
+                if ($text -like 'source remove*') {
+                    return [pscustomobject]@{ ExitCode = 0; Output = @() }
+                }
+                if ($text -like 'source add*cdn.winget.microsoft.com*') {
+                    return [pscustomobject]@{ ExitCode = 0; Output = @() }
+                }
+                return [pscustomobject]@{ ExitCode = 1; Output = @() }
+            }
+            Set-WsWingetSources -Context $context | Should -Be 'Official'
+            $context.WingetSource | Should -Be 'Official'
+            ($global:WsWingetCalls -join '|') | Should -Match 'source add --name winget --arg https://cdn\.winget\.microsoft\.com/cache'
+            Test-Path -LiteralPath $context.ManifestPath | Should -BeFalse
+        }
+    }
+
+    It '恢复源时移除当前源并添加官方源' {
+        InModuleScope WsBootstrap -Parameters @{ Repo = $script:repo; Directory = $TestDrive } {
+            param($Repo, $Directory)
+            $context = New-WsContext -RepoRoot $Repo
+            $context.LogPath = Join-Path $Directory 'winget-source-restore.log'
+            $global:WsRestoreCalls = [System.Collections.Generic.List[string]]::new()
+            Mock Invoke-WsProcess {
+                param($FilePath, $Arguments)
+                $global:WsRestoreCalls.Add(($Arguments -join ' '))
+                return [pscustomobject]@{ ExitCode = 0; Output = @() }
+            }
+            Restore-WsWingetSource -Context $context -Name 'winget' -OfficialUrl 'https://cdn.winget.microsoft.com/cache'
+            $calls = $global:WsRestoreCalls -join '|'
+            $calls | Should -Match 'source remove --name winget'
+            $calls | Should -Match 'source add --name winget --arg https://cdn\.winget\.microsoft\.com/cache'
+        }
+    }
+
+    It '回滚 WingetSource 时恢复原源' {
+        InModuleScope WsBootstrap -Parameters @{ Repo = $script:repo; Directory = $TestDrive } {
+            param($Repo, $Directory)
+            $context = New-WsContext -RepoRoot $Repo
+            $context.LogPath = Join-Path $Directory 'winget-source-rollback.log'
+            Mock Restore-WsWingetSource { }
+            $manifest = @([pscustomobject]@{
+                    Kind        = 'WingetSource'
+                    Name        = 'winget'
+                    PreviousUrl = 'https://cdn.winget.microsoft.com/cache'
+                })
+            Invoke-WsRollback -Context $context -Manifest $manifest
+            Should -Invoke Restore-WsWingetSource -Times 1 -ParameterFilter {
+                $Name -eq 'winget' -and $OfficialUrl -eq 'https://cdn.winget.microsoft.com/cache'
+            }
         }
     }
 }

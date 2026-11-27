@@ -147,6 +147,19 @@ function Test-WsData {
     if (@($Context.Mirrors.gradle.repositories).Count -lt 3) {
         $problems.Add('mirrors.json gradle.repositories 至少需要 3 个地址')
     }
+    if ($Context.Mirrors.winget) {
+        if ([string]::IsNullOrWhiteSpace([string]$Context.Mirrors.winget.sourceName)) {
+            $problems.Add('mirrors.json winget 缺少 sourceName')
+        }
+        if (@($Context.Mirrors.winget.sources).Count -eq 0) {
+            $problems.Add('mirrors.json winget.sources 至少需要 1 个地址')
+        }
+        foreach ($source in @($Context.Mirrors.winget.sources)) {
+            if ($source -notmatch '^https://') {
+                $problems.Add("mirrors.json winget 源必须为 HTTPS：$source")
+            }
+        }
+    }
     if ($Context.Bootstrap.schemaVersion -ne 1) {
         $problems.Add('bootstrap.json schemaVersion 必须为 1')
     }
@@ -212,6 +225,7 @@ function Invoke-WsBaseStage {
         $Context.WorkspaceRoot = Resolve-WsWorkspaceRoot -Context $Context -Override $Context.WorkspaceRootOverride
     }
     [void](New-WsWorkspace -Context $Context)
+    [void](Set-WsWingetSources -Context $Context)
     $packages = @(Get-WsStagePackages -Context $Context -Stage 'base')
     Invoke-WsPackageGroup -Context $Context -Packages $packages
     Update-WsProcessPath -Context $Context
@@ -519,6 +533,7 @@ function Invoke-WsSystemStage {
     [CmdletBinding()]
     param([Parameter(Mandatory = $true)][object]$Context)
 
+    [void](Set-WsWingetSources -Context $Context)
     $packages = @(Get-WsStagePackages -Context $Context -Stage 'system')
     Invoke-WsPackageGroup -Context $Context -Packages $packages
     [void](Set-WsSystemSettings -Context $Context)
@@ -740,6 +755,16 @@ function Test-WsEnvironment {
             if ($value -ne $rustup.Expected) {
                 $failures.Add("$($rustup.Name) 与 data/mirrors.json 不一致")
             }
+        }
+        if (Get-Command 'winget' -ErrorAction SilentlyContinue) {
+            $wingetSourceUrl = Get-WsWingetSourceUrl -Name 'winget'
+            if (-not $wingetSourceUrl) {
+                $warnings.Add('无法读取或未配置 winget 源，跳过镜像检查')
+            } elseif (-not (Test-WsWingetMirrorUrl -Url $wingetSourceUrl -Config $Context.Mirrors.winget)) {
+                $warnings.Add("winget 源未使用镜像：$wingetSourceUrl")
+            }
+        } else {
+            $warnings.Add('未找到 winget，跳过 winget 源检查')
         }
     }
 

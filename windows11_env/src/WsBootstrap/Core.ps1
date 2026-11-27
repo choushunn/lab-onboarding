@@ -96,6 +96,8 @@ function New-WsContext {
         EnableDevExclusions   = [bool]$EnableDevExclusions
         SkipSkills            = [bool]$SkipSkills
         SkillsStatus          = 'NotRun'
+        WingetSource          = $null
+        WingetSourceChecked   = $false
         WorkspaceRootOverride = $WorkspaceRoot
         WorkspaceRoot         = $null
         UserFile              = $UserFile
@@ -866,7 +868,7 @@ function Test-WsManifestRequiresAdmin {
     param([Parameter(Mandatory = $true)][object]$Manifest)
 
     foreach ($entry in @($Manifest.entries)) {
-        if ($entry.Kind -in @('Registry', 'DefenderExclusion')) {
+        if ($entry.Kind -in @('Registry', 'DefenderExclusion', 'WingetSource')) {
             return $true
         }
         if ($entry.Kind -eq 'Environment' -and $entry.Scope -eq 'Machine') {
@@ -989,6 +991,9 @@ function Invoke-WsRollback {
             'Registry' { Restore-WsRegistryChange -Entry $entry }
             'Path' { Restore-WsPathChange -Entry $entry }
             'Environment' { Restore-WsEnvironmentChange -Entry $entry }
+            'WingetSource' {
+                Restore-WsWingetSource -Context $Context -Name ([string]$entry.Name) -OfficialUrl ([string]$entry.PreviousUrl)
+            }
             'DefenderExclusion' {
                 try {
                     Remove-MpPreference -ExclusionPath $entry.Value -ErrorAction Stop
