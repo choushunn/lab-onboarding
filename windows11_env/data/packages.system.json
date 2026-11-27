@@ -10,7 +10,6 @@
     { "id": "CharlesMilette.TranslucentTB", "name": "TranslucentTB", "provider": "winget", "packageId": "CharlesMilette.TranslucentTB", "stage": "system", "required": false },
     { "id": "t1m0thyj.WinDynamicDesktop", "name": "WinDynamicDesktop", "provider": "winget", "packageId": "t1m0thyj.WinDynamicDesktop", "stage": "system", "required": false },
     { "id": "WinSCP.WinSCP", "name": "WinSCP", "provider": "winget", "packageId": "WinSCP.WinSCP", "stage": "system", "required": false },
-    { "id": "Microsoft.Office", "name": "Microsoft 365", "provider": "winget", "packageId": "Microsoft.Office", "stage": "system", "required": false },
     { "id": "OpenAI.ChatGPT", "name": "OpenAI ChatGPT", "provider": "winget", "packageId": "OpenAI.ChatGPT", "stage": "system", "required": false },
     { "id": "Tencent.TencentMeeting", "name": "Tencent Meeting", "provider": "winget", "packageId": "Tencent.TencentMeeting", "stage": "system", "required": false },
     { "id": "Tencent.TIM", "name": "TIM", "provider": "winget", "packageId": "Tencent.TIM", "stage": "system", "required": false },

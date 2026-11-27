@@ -73,10 +73,10 @@
       "target": "GitHub CLI"
     },
     {
-      "name": "Microsoft 365 激活",
-      "reason": "账号登录与许可证激活",
-      "source": "Microsoft 365",
-      "target": "Office"
+      "name": "Microsoft 365",
+      "reason": "Office Tool Plus 图形部署工具，需账号登录、选择组件与许可证激活",
+      "source": "https://www.officetool.plus/zh-cn/",
+      "target": "C:\\Program Files\\Microsoft Office"
     },
     {
       "name": "Clash Party 订阅与系统代理",
