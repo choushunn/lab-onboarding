@@ -16,7 +16,7 @@
     "registry": "https://mirrors.huaweicloud.com/repository/npm/"
   },
   "corepack": {
-    "registry": "https://mirrors.huaweicloud.com/repository/npm/"
+    "registry": "https://mirrors.cloud.tencent.com/npm/"
   },
   "winget": {
     "sourceName": "winget",

@@ -246,6 +246,9 @@ function Initialize-WsNodeToolchain {
         Write-WsLog 'DryRun：将执行 corepack enable、pnpm 激活与 store 配置' -Context $Context
         return
     }
+    $env:COREPACK_NPM_REGISTRY = [string]$Context.Mirrors.corepack.registry
+    $env:npm_config_registry = [string]$Context.Mirrors.npm.registry
+    Write-WsLog "corepack 与 npm 镜像：$env:COREPACK_NPM_REGISTRY" -Context $Context
     $corepackPath = (Get-Command 'corepack' -ErrorAction SilentlyContinue).Source
     if (-not $corepackPath) {
         $install = Invoke-WsProcess -FilePath 'npm' -Arguments @('install', '-g', 'corepack')
@@ -265,14 +268,33 @@ function Initialize-WsNodeToolchain {
             Write-WsLog "覆盖 $nodeDir 下的 corepack shim 失败（需要管理员权限）；pnpm 不可用时请运行 just bootstrap" -Level WARN -Context $Context
         }
     }
+    $pnpmCommand = 'pnpm'
     foreach ($arguments in @(@('enable'), @('prepare', 'pnpm@latest', '--activate'))) {
         $result = Invoke-WsProcess -FilePath $corepackPath -Arguments $arguments
         if ($result.ExitCode -ne 0) {
+            if (($arguments -join ' ') -eq 'prepare pnpm@latest --activate') {
+                $detail = (@($result.Output) -join ' ').Trim()
+                Write-WsLog "corepack prepare 失败，改用 npm 安装 pnpm：$detail" -Level WARN -Context $Context
+                $fallback = Invoke-WsProcess -FilePath 'npm' -Arguments @('install', '-g', 'pnpm@latest')
+                if ($fallback.ExitCode -eq 0) {
+                    $prefix = @((Invoke-WsProcess -FilePath 'npm' -Arguments @('prefix', '-g')).Output) | Select-Object -Last 1
+                    $pnpmCommand = Join-Path ([string]$prefix) 'pnpm.cmd'
+                    if (-not (Test-Path -LiteralPath $pnpmCommand)) {
+                        throw 'npm 安装 pnpm 后未找到 pnpm.cmd'
+                    }
+                    $disable = Invoke-WsProcess -FilePath $corepackPath -Arguments @('disable', 'pnpm', '--install-directory', $nodeDir)
+                    if ($disable.ExitCode -ne 0) {
+                        Write-WsLog 'corepack pnpm shim 移除失败，后续命令可能仍走 corepack' -Level WARN -Context $Context
+                    }
+                    continue
+                }
+                Write-WsLog 'npm 安装 pnpm 失败' -Level ERROR -Context $Context
+            }
             throw ('corepack ' + ($arguments -join ' ') + ' 失败')
         }
     }
     $store = Resolve-WsPnpmStore -Context $Context
-    $result = Invoke-WsProcess -FilePath 'pnpm' -Arguments @('config', 'set', 'store-dir', $store)
+    $result = Invoke-WsProcess -FilePath $pnpmCommand -Arguments @('config', 'set', 'store-dir', $store)
     if ($result.ExitCode -ne 0) {
         throw 'pnpm store 配置失败'
     }
