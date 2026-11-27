@@ -789,3 +789,101 @@ Describe '代理端点' {
         }
     }
 }
+
+Describe 'Windows 激活' {
+    It 'LicenseStatus 为 1 视为已激活' {
+        InModuleScope WsBootstrap {
+            Mock Get-CimInstance { [pscustomobject]@{ LicenseStatus = 1 } }
+            Test-WsWindowsActivated | Should -BeTrue
+        }
+    }
+
+    It '无许可证记录或 LicenseStatus 非 1 视为未激活' {
+        InModuleScope WsBootstrap {
+            Mock Get-CimInstance { $null }
+            Test-WsWindowsActivated | Should -BeFalse
+            Mock Get-CimInstance { [pscustomobject]@{ LicenseStatus = 5 } }
+            Test-WsWindowsActivated | Should -BeFalse
+        }
+    }
+
+    It '已激活时不下载脚本' {
+        InModuleScope WsBootstrap -Parameters @{ Repo = $script:repo; Directory = $TestDrive } {
+            param($Repo, $Directory)
+            $context = New-WsContext -RepoRoot $Repo
+            $context.LogPath = Join-Path $Directory 'activation-skip.log'
+            Mock Test-WsWindowsActivated { $true }
+            Mock Invoke-WsDownload { throw '不应下载' }
+            Invoke-WsWindowsActivation -Context $context
+            Should -Invoke Invoke-WsDownload -Times 0
+        }
+    }
+
+    It 'DryRun 只记录计划' {
+        InModuleScope WsBootstrap -Parameters @{ Repo = $script:repo; Directory = $TestDrive } {
+            param($Repo, $Directory)
+            $context = New-WsContext -RepoRoot $Repo -DryRun
+            $context.LogPath = Join-Path $Directory 'activation-dry.log'
+            Mock Test-WsWindowsActivated { $false }
+            Mock Invoke-WsDownload { throw '不应下载' }
+            Invoke-WsWindowsActivation -Context $context
+            Should -Invoke Invoke-WsDownload -Times 0
+        }
+    }
+
+    It '未激活时下载、校验并运行脚本' {
+        InModuleScope WsBootstrap -Parameters @{ Repo = $script:repo; Directory = $TestDrive } {
+            param($Repo, $Directory)
+            $context = New-WsContext -RepoRoot $Repo
+            $context.LogPath = Join-Path $Directory 'activation-run.log'
+            $script:activated = $false
+            Mock Test-WsWindowsActivated { $script:activated }
+            Mock Invoke-WsDownload { Set-Content -LiteralPath $OutFile -Value 'stub' }
+            Mock Assert-WsFileHash { 'Verified' }
+            Mock Invoke-WsProcess { $script:activated = $true; [pscustomobject]@{ ExitCode = 0; Output = @('ok') } }
+            Invoke-WsWindowsActivation -Context $context
+            Should -Invoke Invoke-WsDownload -Times 1
+            Should -Invoke Invoke-WsProcess -Times 1
+            $context.Warnings.Count | Should -Be 0
+            (Get-Content -LiteralPath $context.LogPath -Raw) | Should -Match 'Windows 激活成功'
+        }
+    }
+
+    It '激活未成功时记录告警' {
+        InModuleScope WsBootstrap -Parameters @{ Repo = $script:repo; Directory = $TestDrive } {
+            param($Repo, $Directory)
+            $context = New-WsContext -RepoRoot $Repo
+            $context.LogPath = Join-Path $Directory 'activation-fail.log'
+            Mock Test-WsWindowsActivated { $false }
+            Mock Invoke-WsDownload { Set-Content -LiteralPath $OutFile -Value 'stub' }
+            Mock Assert-WsFileHash { 'Verified' }
+            Mock Invoke-WsProcess { [pscustomobject]@{ ExitCode = 0; Output = @() } }
+            Invoke-WsWindowsActivation -Context $context
+            $context.Warnings.Count | Should -Be 1
+        }
+    }
+
+    It '下载失败时只告警' {
+        InModuleScope WsBootstrap -Parameters @{ Repo = $script:repo; Directory = $TestDrive } {
+            param($Repo, $Directory)
+            $context = New-WsContext -RepoRoot $Repo
+            $context.LogPath = Join-Path $Directory 'activation-download-fail.log'
+            Mock Test-WsWindowsActivated { $false }
+            Mock Invoke-WsDownload { throw 'network down' }
+            { Invoke-WsWindowsActivation -Context $context } | Should -Not -Throw
+            $context.Warnings.Count | Should -Be 1
+        }
+    }
+
+    It '哈希不匹配时终止' {
+        InModuleScope WsBootstrap -Parameters @{ Repo = $script:repo; Directory = $TestDrive } {
+            param($Repo, $Directory)
+            $context = New-WsContext -RepoRoot $Repo
+            $context.LogPath = Join-Path $Directory 'activation-hash-fail.log'
+            Mock Test-WsWindowsActivated { $false }
+            Mock Invoke-WsDownload { Set-Content -LiteralPath $OutFile -Value 'stub' }
+            Mock Assert-WsFileHash { throw '哈希校验失败' }
+            { Invoke-WsWindowsActivation -Context $context } | Should -Throw '*哈希校验失败*'
+        }
+    }
+}

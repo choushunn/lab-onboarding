@@ -136,6 +136,14 @@ function Test-WsData {
             }
         }
     }
+    if ($Context.Bootstrap.activation) {
+        if (-not $Context.Bootstrap.activation.scriptUrl) {
+            $problems.Add('bootstrap.json activation 缺少 scriptUrl')
+        }
+        if ([string]$Context.Bootstrap.activation.sha256 -notmatch '^[0-9a-fA-F]{64}$') {
+            $problems.Add('bootstrap.json activation.sha256 必须为 64 位十六进制')
+        }
+    }
     if ($Context.Mirrors.schemaVersion -ne 1) {
         $problems.Add('mirrors.json schemaVersion 必须为 1')
     }
@@ -431,6 +439,77 @@ function Invoke-WsEnvironmentStage {
     }
 }
 
+function Test-WsWindowsActivated {
+    [CmdletBinding()]
+    param()
+
+    $product = Get-CimInstance -ClassName SoftwareLicensingProduct -Filter "PartialProductKey IS NOT NULL AND ApplicationID='55c92734-d682-4d71-983e-d6ec3f16059f'" -ErrorAction SilentlyContinue |
+        Select-Object -First 1
+    if (-not $product) {
+        return $false
+    }
+    [int]$product.LicenseStatus -eq 1
+}
+
+function Invoke-WsWindowsActivation {
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)][object]$Context)
+
+    $activation = $Context.Bootstrap.activation
+    if (-not $activation -or -not $activation.scriptUrl) {
+        Write-WsLog '未配置 Windows 激活脚本，跳过激活' -Level SKIP -Context $Context
+        return
+    }
+    if (Test-WsWindowsActivated) {
+        Write-WsLog 'Windows 已激活，跳过激活' -Level SKIP -Context $Context
+        return
+    }
+    if ($Context.DryRun) {
+        Write-WsLog 'DryRun：将下载并运行 Windows 激活脚本' -Level SKIP -Context $Context
+        return
+    }
+
+    $scriptPath = Join-Path $env:TEMP 'KMS-Cangshui.net.bat'
+    try {
+        Invoke-WsDownload -Uri ([string]$activation.scriptUrl) -OutFile $scriptPath
+    } catch {
+        $message = "下载 Windows 激活脚本失败，跳过激活：$($_.Exception.Message)"
+        $Context.Warnings.Add($message)
+        Write-WsLog $message -Level WARN -Context $Context
+        return
+    }
+    [void](Assert-WsFileHash -Context $Context -Package ([pscustomobject]@{
+                id     = 'windows-activation'
+                name   = 'Windows 激活脚本'
+                sha256 = [string]$activation.sha256
+            }) -Path $scriptPath)
+
+    $runnerPath = Join-Path $env:TEMP 'wsbootstrap-activate.cmd'
+    $previousEncoding = [Console]::OutputEncoding
+    try {
+        Set-Content -LiteralPath $runnerPath -Value @('@echo off', ('echo A| "' + $scriptPath + '"')) -Encoding ascii
+        [Console]::OutputEncoding = [Text.Encoding]::GetEncoding(936)
+        $result = Invoke-WsProcess -FilePath $runnerPath
+        foreach ($line in @($result.Output)) {
+            $text = [string]$line
+            if ($text.Trim()) {
+                Write-WsLog ('[Activation] ' + $text) -Context $Context
+            }
+        }
+    } finally {
+        [Console]::OutputEncoding = $previousEncoding
+        Remove-Item -LiteralPath $runnerPath -Force -ErrorAction SilentlyContinue
+    }
+
+    if (-not (Test-WsWindowsActivated)) {
+        $message = "Windows 激活未成功，可手动运行 $($activation.scriptUrl)"
+        $Context.Warnings.Add($message)
+        Write-WsLog $message -Level WARN -Context $Context
+        return
+    }
+    Write-WsLog 'Windows 激活成功' -Context $Context
+}
+
 function Invoke-WsSystemStage {
     [CmdletBinding()]
     param([Parameter(Mandatory = $true)][object]$Context)
@@ -438,6 +517,7 @@ function Invoke-WsSystemStage {
     $packages = @(Get-WsStagePackages -Context $Context -Stage 'system')
     Invoke-WsPackageGroup -Context $Context -Packages $packages
     [void](Set-WsSystemSettings -Context $Context)
+    Invoke-WsWindowsActivation -Context $Context
 }
 
 function Test-WsEnvironment {

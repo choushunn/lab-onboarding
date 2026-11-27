@@ -62,7 +62,7 @@
     },
     {
       "name": "Windows 系统激活",
-      "reason": "KMS 激活，需管理员权限执行 slmgr 命令",
+      "reason": "System 阶段自动运行苍水 KMS 脚本；失败时手动执行",
       "source": "https://kms.cangshui.net/",
       "target": "Windows 许可证"
     },

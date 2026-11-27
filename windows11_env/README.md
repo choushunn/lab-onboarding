@@ -57,5 +57,6 @@ AGENTS.md                     代理规则唯一真源
 - 机器级阶段需要管理员权限；`-NoElevate` 只跳过机器级阶段。
 - 回滚不卸载已安装软件，只还原配置文件、PATH、环境变量、注册表值与 Defender 排除项；运行后被修改的文件保留现状并记为冲突。
 - Defender 排除项默认关闭，`-EnableDevExclusions` 才添加。
+- System 阶段检测 Windows 激活状态；未激活时下载并按 `data/bootstrap.json` 的哈希校验苍水 KMS 脚本后尝试激活，激活不可回滚，下载失败只告警。
 - Config 阶段默认同步 `data/skills.json` 中的 Agent Skills；`-SkipSkills` 跳过，失败只告警。
 - 仓库不保存密钥、令牌或个人配置备份；提交信息使用 Conventional Commits。

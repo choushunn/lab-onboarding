@@ -17,6 +17,14 @@
     "proxy": { "type": "object" },
     "ccs": { "type": "object" },
     "system": { "type": "object" },
+    "activation": {
+      "type": "object",
+      "required": ["scriptUrl", "sha256"],
+      "properties": {
+        "scriptUrl": { "type": "string" },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
     "path": { "type": "object" }
   }
 }

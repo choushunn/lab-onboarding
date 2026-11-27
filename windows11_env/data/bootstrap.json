@@ -66,6 +66,10 @@
       "{home}\\.m2"
     ]
   },
+  "activation": {
+    "scriptUrl": "https://kms.cangshui.net/kms/KMS-Cangshui.net.bat",
+    "sha256": "bb4b3da7a9a4c5d5784b0681797aa651d0ce62012a7297e92d3e0a2a476753b5"
+  },
   "path": {
     "machineHead": [],
     "machineTail": [
