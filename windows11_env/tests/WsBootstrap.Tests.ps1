@@ -62,6 +62,14 @@ Describe '配置写入' {
         @(Get-ChildItem -LiteralPath $script:context.BackupDir -File | Where-Object { $_.Name -like '*force.ini*' }).Count | Should -Be 1
     }
 
+    It 'manifest 记录写入前后哈希' {
+        $path = Join-Path $TestDrive 'hashed.ini'
+        [void](Write-WsManagedFile -Context $script:context -Path $path -Content "a=1`n")
+        $entry = @((Get-Content -LiteralPath $script:context.ManifestPath -Raw | ConvertFrom-Json).entries)[0]
+        $entry.BeforeHash | Should -Be ''
+        $entry.AfterHash | Should -Be (Get-WsFileHash -Path $path)
+    }
+
     It '写入 Codex、Claude 与 Trae 的全局规则且只含 5 条' {
         $script:context.Home = Join-Path $TestDrive 'agents-home'
         $paths = @(
@@ -178,6 +186,32 @@ Describe 'pacman 镜像' {
     }
 }
 
+Describe '系统设置' {
+    It '默认不添加 Defender 排除项' {
+        InModuleScope WsBootstrap -Parameters @{ Repo = $script:repo; Directory = $TestDrive } {
+            param($Repo, $Directory)
+            $context = New-WsContext -RepoRoot $Repo
+            $context.LogPath = Join-Path $Directory 'system-default.log'
+            Mock Set-WsDefenderExclusions { @() }
+            Mock Set-WsRegistryValue { 'Unchanged' }
+            Set-WsSystemSettings -Context $context | Out-Null
+            Should -Invoke Set-WsDefenderExclusions -Times 0
+        }
+    }
+
+    It 'EnableDevExclusions 开启后添加 Defender 排除项' {
+        InModuleScope WsBootstrap -Parameters @{ Repo = $script:repo; Directory = $TestDrive } {
+            param($Repo, $Directory)
+            $context = New-WsContext -RepoRoot $Repo -EnableDevExclusions
+            $context.LogPath = Join-Path $Directory 'system-enable.log'
+            Mock Set-WsDefenderExclusions { @() }
+            Mock Set-WsRegistryValue { 'Unchanged' }
+            Set-WsSystemSettings -Context $context | Out-Null
+            Should -Invoke Set-WsDefenderExclusions -Times 1
+        }
+    }
+}
+
 Describe '回滚' {
     It '按 manifest 逆序处理' {
         InModuleScope WsBootstrap -Parameters @{ Repo = $script:repo; Directory = $TestDrive } {
@@ -212,6 +246,68 @@ Describe '回滚' {
         Invoke-WsRollback -Context $context -Manifest $manifest
         Test-Path -LiteralPath $created | Should -BeFalse
         (Get-Content -LiteralPath $target -Raw).Trim() | Should -Be 'original'
+    }
+
+    It '哈希未被修改时按备份还原' {
+        $context = New-WsContext -RepoRoot $script:repo
+        $context.LogPath = Join-Path $TestDrive 'rollback-hash-ok.log'
+        $target = Join-Path $TestDrive 'hash-ok.txt'
+        Set-Content -LiteralPath $target -Value 'written'
+        $backup = Join-Path $TestDrive 'hash-ok.bak'
+        Set-Content -LiteralPath $backup -Value 'original'
+        $manifest = @(
+            [pscustomobject]@{
+                Kind = 'File'; Path = $target; Existed = $true; BackupPath = $backup;
+                BeforeHash = ''; AfterHash = (Get-WsFileHash -Path $target)
+            }
+        )
+        Invoke-WsRollback -Context $context -Manifest $manifest
+        (Get-Content -LiteralPath $target -Raw).Trim() | Should -Be 'original'
+    }
+
+    It '运行后被修改的文件保留现状并报告冲突' {
+        $context = New-WsContext -RepoRoot $script:repo
+        $context.LogPath = Join-Path $TestDrive 'rollback-hash-conflict.log'
+        $target = Join-Path $TestDrive 'hash-conflict.txt'
+        Set-Content -LiteralPath $target -Value 'written'
+        $backup = Join-Path $TestDrive 'hash-conflict.bak'
+        Set-Content -LiteralPath $backup -Value 'original'
+        $manifest = @(
+            [pscustomobject]@{
+                Kind = 'File'; Path = $target; Existed = $true; BackupPath = $backup;
+                BeforeHash = ''; AfterHash = (Get-WsFileHash -Path $target)
+            }
+        )
+        Set-Content -LiteralPath $target -Value 'user-edit'
+        Invoke-WsRollback -Context $context -Manifest $manifest
+        (Get-Content -LiteralPath $target -Raw).Trim() | Should -Be 'user-edit'
+        (Get-Content -LiteralPath $context.LogPath -Raw) | Should -Match '跳过回滚'
+        (Get-Content -LiteralPath $context.LogPath -Raw) | Should -Match '冲突跳过 1 项'
+    }
+}
+
+Describe '验收' {
+    It '验收结束写入环境报告' {
+        InModuleScope WsBootstrap -Parameters @{ Repo = $script:repo; Directory = $TestDrive } {
+            param($Repo, $Directory)
+            $context = New-WsContext -RepoRoot $Repo
+            $context.LogPath = Join-Path $Directory 'verify.log'
+            $context.RunDirectory = Join-Path $Directory 'verify-run'
+            Mock Test-WsEnvironment {
+                [pscustomobject]@{
+                    Failures = @()
+                    Warnings = @()
+                    Versions = @([pscustomobject]@{ Name = 'git'; Version = 'git version 2.0'; Path = 'C:\git.exe' })
+                }
+            }
+            Invoke-WsVerifyStage -Context $context
+            $reportPath = Join-Path $context.RunDirectory 'environment-report.json'
+            Test-Path -LiteralPath $reportPath | Should -BeTrue
+            $report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
+            $report.runId | Should -Be $context.RunId
+            $report.tools[0].Name | Should -Be 'git'
+            $report.platform.psVersion | Should -Not -BeNullOrEmpty
+        }
     }
 }
 

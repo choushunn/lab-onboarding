@@ -131,6 +131,8 @@ function Write-WsManagedFile {
             Path       = $Path
             Existed    = $true
             BackupPath = $backup
+            BeforeHash = Get-WsFileHash -Path $Path
+            AfterHash  = Get-WsTextHash -Text $Content
             Action     = 'Overwrite'
         }
     } else {
@@ -143,6 +145,8 @@ function Write-WsManagedFile {
             Path       = $Path
             Existed    = $false
             BackupPath = ''
+            BeforeHash = ''
+            AfterHash  = Get-WsTextHash -Text $Content
             Action     = 'Create'
         }
     }
@@ -435,8 +439,12 @@ function Set-WsSystemSettings {
                 Status = Set-WsRegistryValue -Context $Context -Hive 'HKLM' -SubKey 'SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock' -Name 'AllowDevelopmentWithoutDevLicense' -Value 1 -ValueKind DWord
             })
     }
-    foreach ($status in @(Set-WsDefenderExclusions -Context $Context)) {
-        $statuses.Add($status)
+    if ($Context.EnableDevExclusions) {
+        foreach ($status in @(Set-WsDefenderExclusions -Context $Context)) {
+            $statuses.Add($status)
+        }
+    } else {
+        Write-WsLog 'Defender 排除项未启用：使用 -EnableDevExclusions 启用' -Level SKIP -Context $Context
     }
     foreach ($status in $statuses) {
         Write-WsLog ("系统设置 {0} -> {1}" -f $status.Name, $status.Status) -Context $Context
@@ -561,8 +569,16 @@ function Set-WsGitConfig {
         }
     }
     $safe = Invoke-WsProcess -FilePath 'git' -Arguments @('config', '--global', '--get-all', 'safe.directory')
-    if (-not (@($safe.Output) -contains '*')) {
-        $result = Invoke-WsProcess -FilePath 'git' -Arguments @('config', '--global', '--add', 'safe.directory', '*')
+    $safeDirectories = @($safe.Output | Where-Object { $_ })
+    if ($safeDirectories -contains '*') {
+        Write-WsLog "git safe.directory 含 '*'，范围过宽；移除：git config --global --unset-all safe.directory" -Level WARN -Context $Context
+    }
+    $workspaceRoot = $Context.WorkspaceRoot
+    if (-not $workspaceRoot) {
+        $workspaceRoot = Resolve-WsWorkspaceRoot -Context $Context -Override $Context.WorkspaceRootOverride
+    }
+    if ($workspaceRoot -and $safeDirectories -notcontains $workspaceRoot) {
+        $result = Invoke-WsProcess -FilePath 'git' -Arguments @('config', '--global', '--add', 'safe.directory', $workspaceRoot)
         if ($result.ExitCode -ne 0) {
             throw 'git safe.directory 写入失败'
         }

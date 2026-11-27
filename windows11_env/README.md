@@ -48,5 +48,6 @@ AGENTS.md                     代理规则唯一真源
 
 - 不安装 WSL、Docker、Dev Container；全部 Windows 原生。
 - 机器级阶段需要管理员权限；`-NoElevate` 只跳过机器级阶段。
-- 回滚不卸载已安装软件，只还原配置文件、PATH、环境变量、注册表值与 Defender 排除项。
+- 回滚不卸载已安装软件，只还原配置文件、PATH、环境变量、注册表值与 Defender 排除项；运行后被修改的文件保留现状并记为冲突。
+- Defender 排除项默认关闭，`-EnableDevExclusions` 才添加。
 - 仓库不保存密钥、令牌或个人配置备份；提交信息使用 Conventional Commits。

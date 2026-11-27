@@ -63,6 +63,7 @@ function New-WsContext {
         [switch]$IncludeOptional,
         [switch]$ForceConfig,
         [switch]$ReinstallPackages,
+        [switch]$EnableDevExclusions,
         [string]$WorkspaceRoot,
         [string]$UserFile,
         [switch]$Elevated,
@@ -87,6 +88,7 @@ function New-WsContext {
         IncludeOptional       = [bool]$IncludeOptional
         ForceConfig           = [bool]$ForceConfig
         ReinstallPackages     = [bool]$ReinstallPackages
+        EnableDevExclusions   = [bool]$EnableDevExclusions
         WorkspaceRootOverride = $WorkspaceRoot
         WorkspaceRoot         = $null
         UserFile              = $UserFile
@@ -510,6 +512,29 @@ function Read-WsUserConfig {
     $user
 }
 
+function Get-WsFileHash {
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)][string]$Path)
+
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
+        return ''
+    }
+    (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
+}
+
+function Get-WsTextHash {
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)][AllowEmptyString()][string]$Text)
+
+    $sha = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        $bytes = [Text.UTF8Encoding]::new($false).GetBytes($Text)
+        ([BitConverter]::ToString($sha.ComputeHash($bytes)) -replace '-', '').ToLowerInvariant()
+    } finally {
+        $sha.Dispose()
+    }
+}
+
 function Add-WsChange {
     [CmdletBinding()]
     param(
@@ -558,6 +583,34 @@ function Save-WsSummary {
         finishedAt    = (Get-Date).ToString('o')
     }
     Save-WsJson -Path $Context.SummaryPath -Value $summary
+}
+
+function Save-WsEnvironmentReport {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][object]$Context,
+        [Parameter(Mandatory = $true)][object]$Result
+    )
+
+    if ($Context.DryRun) {
+        return
+    }
+    $report = [pscustomobject]@{
+        runId       = $Context.RunId
+        generatedAt = (Get-Date).ToString('o')
+        profile     = $Context.Profile
+        platform    = [pscustomobject]@{
+            os        = [System.Runtime.InteropServices.RuntimeInformation]::OSDescription
+            psVersion = $PSVersionTable.PSVersion.ToString()
+            machine   = $env:COMPUTERNAME
+        }
+        tools       = @($Result.Versions)
+        failures    = @($Result.Failures)
+        warnings    = @($Result.Warnings)
+    }
+    $path = Join-Path $Context.RunDirectory 'environment-report.json'
+    Save-WsJson -Path $path -Value $report
+    $path
 }
 
 function Invoke-WsElevation {
@@ -761,6 +814,14 @@ function Restore-WsFileChange {
         [Parameter(Mandatory = $true)][object]$Entry
     )
 
+    $afterHash = if ($Entry.PSObject.Properties.Name -contains 'AfterHash') { [string]$Entry.AfterHash } else { '' }
+    if ($afterHash) {
+        $currentHash = Get-WsFileHash -Path $Entry.Path
+        if ($currentHash -ne $afterHash) {
+            Write-WsLog "文件在本次运行后被修改，保留现状并跳过回滚：$($Entry.Path)" -Level WARN -Context $Context
+            return 'Conflict'
+        }
+    }
     if ($Entry.Existed) {
         if ($Entry.BackupPath -and (Test-Path -LiteralPath $Entry.BackupPath)) {
             $directory = Split-Path -Parent $Entry.Path
@@ -769,13 +830,17 @@ function Restore-WsFileChange {
             }
             Copy-Item -LiteralPath $Entry.BackupPath -Destination $Entry.Path -Force
             Write-WsLog "还原文件 $($Entry.Path)" -Context $Context
-        } else {
-            Write-WsLog "缺少备份，跳过 $($Entry.Path)" -Level WARN -Context $Context
+            return 'Restored'
         }
-    } elseif (Test-Path -LiteralPath $Entry.Path) {
+        Write-WsLog "缺少备份，跳过 $($Entry.Path)" -Level WARN -Context $Context
+        return 'Skipped'
+    }
+    if (Test-Path -LiteralPath $Entry.Path) {
         Remove-Item -LiteralPath $Entry.Path -Force
         Write-WsLog "删除新建文件 $($Entry.Path)" -Context $Context
+        return 'Restored'
     }
+    return 'Skipped'
 }
 
 function Restore-WsRegistryChange {
@@ -840,10 +905,15 @@ function Invoke-WsRollback {
         Write-WsLog '没有需要回滚的变更' -Context $Context
         return
     }
+    $conflicts = 0
     for ($index = $entries.Count - 1; $index -ge 0; $index--) {
         $entry = $entries[$index]
         switch ($entry.Kind) {
-            'File' { Restore-WsFileChange -Context $Context -Entry $entry }
+            'File' {
+                if ((Restore-WsFileChange -Context $Context -Entry $entry) -eq 'Conflict') {
+                    $conflicts++
+                }
+            }
             'Registry' { Restore-WsRegistryChange -Entry $entry }
             'Path' { Restore-WsPathChange -Entry $entry }
             'Environment' { Restore-WsEnvironmentChange -Entry $entry }
@@ -857,5 +927,5 @@ function Invoke-WsRollback {
             }
         }
     }
-    Write-WsLog "回滚完成，共处理 $($entries.Count) 项；已安装软件不卸载" -Context $Context
+    Write-WsLog "回滚完成，共处理 $($entries.Count) 项；冲突跳过 $conflicts 项；已安装软件不卸载" -Context $Context
 }

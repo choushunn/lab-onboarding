@@ -10,6 +10,7 @@ param(
     [string]$WorkspaceRoot,
     [switch]$ForceConfig,
     [switch]$ReinstallPackages,
+    [switch]$EnableDevExclusions,
     [string]$UserFile,
     [string]$Rollback,
     [switch]$Elevated,
@@ -42,7 +43,7 @@ if ($WorkspaceRoot) {
 
 $context = New-WsContext -RepoRoot $repoRoot -Profile $Profile -Stages $Stages -DryRun:$DryRun -NoElevate:$NoElevate `
     -IncludeOptional:$IncludeOptional -ForceConfig:$ForceConfig -ReinstallPackages:$ReinstallPackages `
-    -WorkspaceRoot $WorkspaceRoot -UserFile $UserFile -Elevated:$Elevated -RunId $RunId
+    -EnableDevExclusions:$EnableDevExclusions -WorkspaceRoot $WorkspaceRoot -UserFile $UserFile -Elevated:$Elevated -RunId $RunId
 
 if ($Rollback) {
     $manifest = Get-WsRollbackManifest -RepoRoot $repoRoot -Rollback $Rollback
@@ -95,13 +96,14 @@ if ($requiresAdmin -and -not (Test-WsAdmin) -and -not $DryRun) {
     } elseif (-not $Elevated) {
         Write-Host '请求管理员权限并整体重启入口。' -ForegroundColor Yellow
         $extra = @{
-            NoElevate         = [bool]$NoElevate
-            IncludeOptional   = [bool]$IncludeOptional
-            ForceConfig       = [bool]$ForceConfig
-            ReinstallPackages = [bool]$ReinstallPackages
-            WorkspaceRoot     = $WorkspaceRoot
-            UserFile          = $UserFile
-            Stages            = $Stages
+            NoElevate           = [bool]$NoElevate
+            IncludeOptional     = [bool]$IncludeOptional
+            ForceConfig         = [bool]$ForceConfig
+            ReinstallPackages   = [bool]$ReinstallPackages
+            EnableDevExclusions = [bool]$EnableDevExclusions
+            WorkspaceRoot       = $WorkspaceRoot
+            UserFile            = $UserFile
+            Stages              = $Stages
         }
         $elevation = Invoke-WsElevation -Context $context -BootstrapPath $PSCommandPath -ExtraParameters $extra
         if (-not $elevation.Started) {

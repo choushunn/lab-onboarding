@@ -622,6 +622,8 @@ function Invoke-WsVerifyStage {
     } else {
         Write-WsLog '验收通过' -Context $Context
     }
+    $reportPath = Save-WsEnvironmentReport -Context $Context -Result $result
+    Write-WsLog "环境报告：$reportPath" -Context $Context
 }
 
 function Invoke-WsStage {
