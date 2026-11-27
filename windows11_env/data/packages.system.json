@@ -1,6 +1,7 @@
 {
   "schemaVersion": 1,
   "packages": [
+    { "id": "abbodi1406.vcredist", "name": "微软常用运行库合集", "provider": "winget", "packageId": "abbodi1406.vcredist", "stage": "system", "required": false },
     { "id": "voidtools.Everything", "name": "Everything", "provider": "winget", "packageId": "voidtools.Everything", "stage": "system", "required": false },
     { "id": "srwi.EverythingToolbar.Deskband", "name": "EverythingToolbar", "provider": "winget", "packageId": "srwi.EverythingToolbar.Deskband", "stage": "system", "required": false },
     { "id": "Insecure.Nmap", "name": "Nmap", "provider": "winget", "packageId": "Insecure.Nmap", "stage": "system", "required": false },
