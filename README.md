@@ -1,6 +1,8 @@
 # 实验室入门任务
 
-为实验室新成员提供一套标准化的开发环境搭建指南，覆盖计算机科学、软件工程、人工智能、嵌入式系统开发等方向的通用基础与专业工具链。
+面向实验室新成员与科研开发人员，提供开发环境标准化、研究方向工具链配置、工程实践模板、AI 辅助开发规范与自动化质量验证，构成一套轻量化研发基础设施。
+
+仓库包含两条路径：`phases/` 按章节手动操作，`windows11_env/` 与 `ubuntu_env/` 提供自动化环境搭建。仓库级规则见 [AGENTS.md](AGENTS.md)，可执行操作规程见 `skills/`。
 
 前置条件：一台 Windows 电脑。如对计算机硬件与软件基础尚不熟悉，可先阅读 [认识你的电脑](https://www.criwits.top/missing/computer-and-its-components.html) 了解 CPU、内存、硬盘等基本概念。
 
@@ -32,6 +34,13 @@
 
 ```
 ├── README.md
+├── AGENTS.md                 仓库级规则：约束、规范、Skills 与验证命令
+├── .editorconfig             编码、缩进与行尾约定
+├── .github/
+│   ├── workflows/
+│   │   ├── ci.yml            PowerShell 静态检查与单元测试
+│   │   └── commitlint.yml    Conventional Commits 校验
+│   └── pull_request_template.md
 ├── phases/
 │   ├── 阶段0-网络与账号.md
 │   ├── 阶段1-Git.md
@@ -44,6 +53,10 @@
 ├── resources/
 │   ├── 常见问题.md
 │   └── 常用工具推荐.md
+├── skills/
+│   ├── windows-bootstrap/SKILL.md
+│   └── repo-delivery/SKILL.md
+├── ubuntu_env/               Ubuntu 服务器初始化
 ├── windows11_env/
 │   ├── README.md
 │   ├── bootstrap.ps1
@@ -65,7 +78,7 @@
 
 ## 自动化方式
 
-`phases/` 是手动路径，按章节逐步操作；`windows11_env/` 是同一套环境的自动化实现，入口为 `bootstrap.ps1`，支持演练、验收与回滚，适合新机一次性搭建。两者任选其一，细节见 [windows11_env/README.md](windows11_env/README.md)。
+`phases/` 是手动路径，按章节逐步操作；`windows11_env/` 面向 Windows 新机，入口为 `bootstrap.ps1`，支持演练、验收与回滚，细节见 [windows11_env/README.md](windows11_env/README.md)；`ubuntu_env/` 面向 Ubuntu 服务器初始化。仓库级规则见 [AGENTS.md](AGENTS.md)，可执行流程见 `skills/`。
 
 ## 参考链接
 
