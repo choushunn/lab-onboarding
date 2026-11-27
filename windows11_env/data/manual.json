@@ -56,7 +56,7 @@
     },
     {
       "name": "火绒安全",
-      "reason": "官网下载与图形安装器",
+      "reason": "需官网下载并图形安装",
       "source": "https://www.huorong.cn/",
       "target": "C:\\Program Files\\Huorong"
     },
