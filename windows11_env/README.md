@@ -4,6 +4,14 @@
 
 ## 快速开始
 
+全新 Windows 11 自带 Windows PowerShell 5.1。首次运行：
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\bootstrap.ps1 -Profile All
+```
+
+入口检测到 PowerShell 低于 7.4 时安装 PowerShell 7 与 just，再以 pwsh 重启。之后的命令：
+
 ```powershell
 .\bootstrap.ps1 -Profile All -DryRun
 .\bootstrap.ps1 -Profile All
@@ -22,7 +30,7 @@
 | 文档 | 内容 |
 |---|---|
 | [开发环境搭建](docs/开发环境搭建.md) | 工作空间、基础工具、语言运行时、嵌入式 CLI、国内镜像、阶段与验收 |
-| [系统环境优化](docs/系统环境优化.md) | 系统软件清单、保守可回滚设置、System Profile、回滚 |
+| [系统环境优化](docs/系统环境优化.md) | 系统软件清单、可回滚设置、System Profile、回滚 |
 
 ## 常用命令
 
@@ -57,6 +65,6 @@ AGENTS.md                     代理规则唯一真源
 - 机器级阶段需要管理员权限；`-NoElevate` 只跳过机器级阶段。
 - 回滚不卸载已安装软件，只还原配置文件、PATH、环境变量、注册表值与 Defender 排除项；运行后被修改的文件保留现状并记为冲突。
 - Defender 排除项默认关闭，`-EnableDevExclusions` 才添加。
-- System 阶段检测 Windows 激活状态；未激活时下载并按 `data/bootstrap.json` 的哈希校验苍水 KMS 脚本后尝试激活，激活不可回滚，下载失败只告警。
+- System 阶段检测 Windows 激活状态；未激活时下载苍水 KMS 脚本并尝试激活，激活不可回滚，下载失败只告警。
 - Config 阶段默认同步 `data/skills.json` 中的 Agent Skills；`-SkipSkills` 跳过，失败只告警。
 - 仓库不保存密钥、令牌或个人配置备份；提交信息使用 Conventional Commits。
