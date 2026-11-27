@@ -44,22 +44,10 @@
       "target": "C:\\Program Files\\STMicroelectronics"
     },
     {
-      "name": "Keil MDK",
-      "reason": "已安装则跳过，未安装时由入口自动下载；安装与许可证手动完成",
-      "source": "https://www.keil.com/fid/armkeil/files/eval/mdk543.exe",
-      "target": "C:\\Programs\\Keil_v5"
-    },
-    {
       "name": "NVIDIA Nsight Systems",
       "reason": "NVIDIA 安装器，无 WinGet 包",
       "source": "https://developer.nvidia.com/nsight-systems",
       "target": "C:\\Program Files\\NVIDIA Corporation"
-    },
-    {
-      "name": "EverythingToolbar",
-      "reason": "仅 GitHub Releases，需代理或手工安装",
-      "source": "https://github.com/srwi/EverythingToolbar/releases",
-      "target": "用户目录"
     },
     {
       "name": "火绒安全",

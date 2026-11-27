@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "packages": [
     { "id": "voidtools.Everything", "name": "Everything", "provider": "winget", "packageId": "voidtools.Everything", "stage": "system", "required": false },
+    { "id": "srwi.EverythingToolbar.Deskband", "name": "EverythingToolbar", "provider": "winget", "packageId": "srwi.EverythingToolbar.Deskband", "stage": "system", "required": false },
     { "id": "Insecure.Nmap", "name": "Nmap", "provider": "winget", "packageId": "Insecure.Nmap", "stage": "system", "required": false },
     { "id": "Rizonesoft.Notepad3", "name": "Notepad3", "provider": "winget", "packageId": "Rizonesoft.Notepad3", "stage": "system", "required": false },
     { "id": "Snipaste", "name": "Snipaste", "provider": "localInstaller", "file": "Snipaste-2.11.3-x64-Setup.exe", "args": ["/S", "/D=C:\\Programs\\Snipaste"], "registryName": "Snipaste*", "stage": "system", "required": false },

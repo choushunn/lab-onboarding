@@ -76,6 +76,9 @@
 | Hello 算法             | <https://www.hello-algo.com/>                                      |
 | Hello Agents         | <https://datawhalechina.github.io/hello-agents/>                   |
 | 认识你的电脑               | <https://www.criwits.top/missing/computer-and-its-components.html> |
+| Missing Semester 2026 | <https://missing.csail.mit.edu/2026/>                               |
+| OSSU 计算机科学自学课表        | <https://cs.ossu.dev/>                                             |
+| CS50x                 | <https://cs50.harvard.edu/x/>                                      |
 
 各阶段专用链接已分别列在对应阶段文档的"参考链接"章节中，常用工具推荐见 [resources/常用工具推荐.md](resources/常用工具推荐.md)。
 

@@ -18,7 +18,8 @@
 | 4.3 Docker             | 按 [Docker Engine 安装](https://docs.docker.com/engine/install/ubuntu/) 在 Ubuntu 中安装 Docker；确认 `docker run hello-world`；使用 docker compose 启动 nginx 服务，执行 `docker compose up -d`；查看 `docker compose ps` 与日志                                                                                                                                                                  | 浏览器或 `curl` 能访问 compose 中声明的端口；`docker compose down` 可正常回收 |
 | 4.4 VSCode 远程开发        | 在 VSCode 中安装 Remote-SSH 扩展；通过 SSH 连接到 Ubuntu 虚拟机；在远程窗口中打开文件夹、编辑文件、运行终端命令，[参考教程](https://www.bilibili.com/video/BV13Z421T7oz/)                                                                                                                                                                                                                                            | VSCode 左下角显示 `SSH: <虚拟机IP>` 连接成功；可在远程终端执行命令                |
 | 4.5 远程工作               | SSH 登录到 Ubuntu VM 后，安装 tmux（`sudo apt install tmux`），学习新建、分离、重连会话：`tmux new -s`、`Ctrl+B d`、`tmux attach -t`；练习从本机传文件到 VM 和从 VM 下载到本机：`scp file user@host:/path`、`rsync -avz ./local/ user@host:~/remote/`                                                                                                                                                                | 能用 tmux 管理持久会话；能用 scp 或 rsync 在宿主机与 VM 间传输文件               |
-| 4.6 AI 编程助手            | 在 VM 中安装 [Node.js](https://nodejs.org/)；通过 npm 全局安装 `@anthropic-ai/claude-code`；获取 DeepSeek API Key 并配置环境变量 `ANTHROPIC_API_KEY` 和 `ANTHROPIC_BASE_URL`（Claude Code 兼容 OpenAI 格式的第三方 API，因此使用 DeepSeek 的 Key 时需设置 Anthropic 命名的环境变量）；在项目目录运行 `claude` 启动交互式编程会话                                                                                                           | `claude --version` 输出版本号；`claude` 可正常启动并响应 DeepSeek 模型     |
+| 4.6 AI 编程助手            | 在 VM 中安装 [Node.js](https://nodejs.org/)；通过 npm 全局安装 `@anthropic-ai/claude-code`；获取 DeepSeek API Key，配置 `ANTHROPIC_BASE_URL=https://api.deepseek.com/anthropic`、`ANTHROPIC_AUTH_TOKEN` 与 `ANTHROPIC_MODEL`（DeepSeek 提供 Anthropic 格式兼容接口，Claude Code 可直接接入）；在项目目录运行 `claude` 启动交互式编程会话                                                                                                           | `claude --version` 输出版本号；`claude` 可正常启动并响应 DeepSeek 模型     |
+| 4.7 AI 协作规范            | 在项目中创建 `AGENTS.md`，写明构建、测试、验证命令与目录约定；把一条重复流程整理成 skill；用 MCP 连接一个外部工具并限定权限范围；要求助手按「改代码 → 跑验证 → 报告命令与退出码」闭环，危险操作必须二次确认 | 新会话中的助手能读取 `AGENTS.md` 并执行其中的验证命令；越权或危险操作被拒绝 |
 
 ## 快速参考
 
@@ -60,9 +61,18 @@ docker run hello-world
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo bash -
 sudo apt install -y nodejs
 npm install -g @anthropic-ai/claude-code
-export ANTHROPIC_API_KEY=sk-your-deepseek-api-key
-export ANTHROPIC_BASE_URL=https://api.deepseek.com/v1
+export ANTHROPIC_BASE_URL=https://api.deepseek.com/anthropic
+export ANTHROPIC_AUTH_TOKEN=sk-your-deepseek-api-key
+export ANTHROPIC_MODEL=deepseek-flash
 claude
+
+# AGENTS.md 最小示例
+# # AGENTS.md
+# ## 验证
+# - 测试：uv run pytest -q
+# - 格式：uvx ruff check .
+# ## 约定
+# - 不提交密钥；改动前先读相关文件
 ```
 
 ## 参考链接
@@ -76,5 +86,7 @@ claude
 - [rsync 手册](https://rsync.samba.org/)
 - [Node.js 下载](https://nodejs.org/)
 - [Claude Code 文档](https://docs.anthropic.com/en/docs/claude-code/overview)
+- [AGENTS.md 规范](https://agents.md/)
+- [Model Context Protocol](https://modelcontextprotocol.io/)
 - [DeepSeek API 文档](https://platform.deepseek.com/)
 
