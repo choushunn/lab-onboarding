@@ -58,12 +58,14 @@ function New-WsContext {
         [Parameter(Mandatory = $true)][string]$RepoRoot,
         [ValidateSet('Dev', 'System', 'All')][string]$Profile = 'All',
         [string[]]$Stages,
+        [ValidateSet('base', 'image', 'embedded')][string[]]$Direction = @('base'),
         [switch]$DryRun,
         [switch]$NoElevate,
         [switch]$IncludeOptional,
         [switch]$ForceConfig,
         [switch]$ReinstallPackages,
         [switch]$EnableDevExclusions,
+        [switch]$SkipSkills,
         [string]$WorkspaceRoot,
         [string]$UserFile,
         [switch]$Elevated,
@@ -76,11 +78,14 @@ function New-WsContext {
     }
     $runDirectory = Join-Path $resolvedRepo ('logs\runs\' + $RunId)
     $dataRoot = Join-Path $resolvedRepo 'data'
+    $directionList = @('base') + @($Direction | Where-Object { $_ -and $_ -ne 'base' })
+    $directionList = @($directionList | Select-Object -Unique)
 
     [pscustomobject]@{
         RepoRoot              = $resolvedRepo
         DataRoot              = $dataRoot
         Profile               = $Profile
+        Direction             = @($directionList)
         SelectedStages        = @($Stages | Where-Object { $_ })
         PlanStages            = @()
         DryRun                = [bool]$DryRun
@@ -89,6 +94,8 @@ function New-WsContext {
         ForceConfig           = [bool]$ForceConfig
         ReinstallPackages     = [bool]$ReinstallPackages
         EnableDevExclusions   = [bool]$EnableDevExclusions
+        SkipSkills            = [bool]$SkipSkills
+        SkillsStatus          = 'NotRun'
         WorkspaceRootOverride = $WorkspaceRoot
         WorkspaceRoot         = $null
         UserFile              = $UserFile
@@ -111,6 +118,7 @@ function New-WsContext {
         Warnings              = [System.Collections.Generic.List[string]]::new()
         Failures              = [System.Collections.Generic.List[string]]::new()
         Bootstrap             = Read-WsJson -Path (Join-Path $dataRoot 'bootstrap.json')
+        Directions            = Read-WsJson -Path (Join-Path $dataRoot 'directions.json')
         Mirrors               = Read-WsJson -Path (Join-Path $dataRoot 'mirrors.json')
         DevPackages           = Read-WsJson -Path (Join-Path $dataRoot 'packages.dev.json')
         SystemPackages        = Read-WsJson -Path (Join-Path $dataRoot 'packages.system.json')
@@ -571,6 +579,7 @@ function Save-WsSummary {
     $summary = [pscustomobject]@{
         runId         = $Context.RunId
         profile       = $Context.Profile
+        direction     = @($Context.Direction)
         dryRun        = $Context.DryRun
         noElevate     = $Context.NoElevate
         workspaceRoot = $Context.WorkspaceRoot
@@ -579,7 +588,12 @@ function Save-WsSummary {
         changes       = @($Context.Changes)
         warnings      = @($Context.Warnings)
         failures      = @($Context.Failures)
-        manual        = @($Context.Manual.items)
+        manual        = @(Get-WsManualItems -Context $Context)
+        skills        = [pscustomobject]@{
+            status = $Context.SkillsStatus
+            source = 'data/skills.json'
+            target = (Join-Path $Context.Home '.agents\skills')
+        }
         finishedAt    = (Get-Date).ToString('o')
     }
     Save-WsJson -Path $Context.SummaryPath -Value $summary
@@ -599,6 +613,7 @@ function Save-WsEnvironmentReport {
         runId       = $Context.RunId
         generatedAt = (Get-Date).ToString('o')
         profile     = $Context.Profile
+        direction   = @($Context.Direction)
         platform    = [pscustomobject]@{
             os        = [System.Runtime.InteropServices.RuntimeInformation]::OSDescription
             psVersion = $PSVersionTable.PSVersion.ToString()
@@ -622,7 +637,7 @@ function Invoke-WsElevation {
     )
 
     $arguments = [System.Collections.Generic.List[string]]::new()
-    foreach ($item in @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $BootstrapPath, '-Elevated', '-RunId', $Context.RunId, '-Profile', $Context.Profile)) {
+    foreach ($item in @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $BootstrapPath, '-Elevated', '-RunId', $Context.RunId, '-Profile', $Context.Profile, '-Direction', ($Context.Direction -join ','))) {
         $arguments.Add($item)
     }
     foreach ($key in $ExtraParameters.Keys) {

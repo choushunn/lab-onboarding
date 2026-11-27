@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "default": "base",
+  "directions": [
+    {
+      "id": "base",
+      "name": "基础环境",
+      "description": "通用开发工具、语言运行时、编辑器与镜像配置"
+    },
+    {
+      "id": "image",
+      "name": "图像处理",
+      "description": "OpenCV 与 GPU 计算工具链"
+    },
+    {
+      "id": "embedded",
+      "name": "嵌入式",
+      "description": "ARM 工具链、调试器与 STM32 配套工具"
+    }
+  ]
+}

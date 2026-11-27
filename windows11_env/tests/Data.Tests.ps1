@@ -52,6 +52,50 @@ Describe '阶段图' {
     }
 }
 
+Describe '研究方向' {
+    It '默认只选择 base' {
+        $context = New-WsContext -RepoRoot $script:repo
+        @($context.Direction).Count | Should -Be 1
+        $context.Direction | Should -Contain 'base'
+        $ids = @(Get-WsStagePackages -Context $context -Stage 'base').id
+        $ids | Should -Contain 'Microsoft.PowerShell'
+        $ids | Should -Contain 'Mihomo-Party.Clash-Party'
+        $ids | Should -Not -Contain 'ARM-GNU-Toolchain'
+        $ids | Should -Not -Contain 'Nvidia.CUDA'
+    }
+
+    It 'embedded 追加 ARM 工具链、调试器与 STM32 人工项' {
+        $context = New-WsContext -RepoRoot $script:repo -Direction embedded
+        $context.Direction | Should -Contain 'base'
+        $context.Direction | Should -Contain 'embedded'
+        @(Get-WsStagePackages -Context $context -Stage 'base').id | Should -Contain 'ARM-GNU-Toolchain'
+        @(Get-WsStagePackages -Context $context -Stage 'toolchain').id | Should -Contain 'pacman-openocd'
+        @(Get-WsStagePackages -Context $context -Stage 'toolchain').id | Should -Contain 'Keil-MDK'
+        @(Get-WsStagePackages -Context $context -Stage 'proxy').id | Should -Contain 'pyocd'
+        @(Get-WsManualItems -Context $context).name | Should -Contain 'STM32CubeMX'
+    }
+
+    It 'image 追加 OpenCV、CUDA 与 Nsight，不安装 ARM 工具链' {
+        $context = New-WsContext -RepoRoot $script:repo -Direction image
+        @(Get-WsStagePackages -Context $context -Stage 'base').id | Should -Contain 'Nvidia.CUDA'
+        @(Get-WsStagePackages -Context $context -Stage 'base').id | Should -Not -Contain 'ARM-GNU-Toolchain'
+        @(Get-WsStagePackages -Context $context -Stage 'toolchain').id | Should -Contain 'pacman-opencv'
+        @(Get-WsManualItems -Context $context).name | Should -Contain 'NVIDIA Nsight Systems'
+        @(Get-WsManualItems -Context $context).name | Should -Not -Contain 'STM32CubeMX'
+    }
+
+    It '多方向合并' {
+        $context = New-WsContext -RepoRoot $script:repo -Direction image, embedded
+        @(Get-WsStagePackages -Context $context -Stage 'base').id | Should -Contain 'ARM-GNU-Toolchain'
+        @(Get-WsStagePackages -Context $context -Stage 'base').id | Should -Contain 'Nvidia.CUDA'
+        @(Get-WsStagePackages -Context $context -Stage 'toolchain').id | Should -Contain 'pacman-opencv'
+    }
+
+    It '未知方向被拒绝' {
+        { New-WsContext -RepoRoot $script:repo -Direction fpga } | Should -Throw
+    }
+}
+
 Describe '数据校验' {
     It 'data 下的包、镜像与人工项通过校验' {
         $problems = @(Test-WsData -Context $script:context)
@@ -183,9 +227,9 @@ Describe 'PATH 与 pnpm store' {
         $terminal.useAcrylic | Should -BeTrue
     }
 
-    It 'D 盘存在时使用配置的 pnpm store' {
+    It '配置盘存在时使用配置的 pnpm store' {
         Resolve-WsPnpmStore -Context $script:context -DriveExists { param($Drive) $true } |
-            Should -Be 'D:\.pnpm-store'
+            Should -Be 'C:\Programs\.pnpm-store'
     }
 
     It 'D 盘不存在时回退到 C:\Workspace' {

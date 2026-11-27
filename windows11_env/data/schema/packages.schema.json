@@ -25,6 +25,11 @@
           "verifyPaths": { "type": "array", "items": { "type": "string" } },
           "version": { "type": "string" },
           "condition": { "type": "string", "enum": ["nvidiaGpu"] },
+          "directions": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "enum": ["base", "image", "embedded"] }
+          },
           "urls": { "type": "array", "items": { "type": "string" } },
           "target": { "type": "string" },
           "repo": { "type": "string" },

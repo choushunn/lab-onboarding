@@ -21,6 +21,22 @@ verify:
 rollback:
     pwsh -NoProfile -File bootstrap.ps1 -Rollback Last
 
+# Agent Skills：只输出同步计划
+skills-dry:
+    pwsh -NoProfile -File scripts/sync-skills.ps1 -DryRun
+
+# Agent Skills：安装清单中缺失的技能
+skills-sync:
+    pwsh -NoProfile -File scripts/sync-skills.ps1
+
+# Agent Skills：更新全局技能
+skills-update:
+    pwsh -NoProfile -File scripts/sync-skills.ps1 -Update
+
+# Agent Skills：移除清单内的全局技能
+skills-remove:
+    pwsh -NoProfile -File scripts/sync-skills.ps1 -Remove
+
 # Python 项目：单元测试
 verify-py:
     uv run pytest -q

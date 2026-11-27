@@ -68,6 +68,8 @@
 
 Skill 必须包含可执行命令、验收标准与退出码；无法执行验证的内容不纳入。
 
+机器级 Agent Skills 由 `windows11_env/scripts/sync-skills.ps1` 同步，清单在 `windows11_env/data/skills.json`，安装到 `%USERPROFILE%\.agents\skills`。`bootstrap.ps1` 的 Config 阶段默认执行同步，`-SkipSkills` 跳过；新增技能包必须提供来源与用途，安装后能在 `npx skills list -g` 中定位。
+
 ## 验证命令
 
 Windows 环境（在 `windows11_env/` 下执行）：

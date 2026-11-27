@@ -1,5 +1,26 @@
 ﻿# Packages.ps1 - 包提供方安装、探测与失败策略
 
+function Get-WsPackageDirections {
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)][object]$Package)
+
+    if ($Package.PSObject.Properties.Name -contains 'directions' -and $Package.directions) {
+        return @($Package.directions)
+    }
+    @('base')
+}
+
+function Test-WsDirectionMatch {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][object]$Context,
+        [Parameter(Mandatory = $true)][object]$Item
+    )
+
+    $selected = @($Context.Direction)
+    @(Get-WsPackageDirections -Package $Item | Where-Object { $selected -contains $_ }).Count -gt 0
+}
+
 function Get-WsStagePackages {
     [CmdletBinding()]
     param(
@@ -8,7 +29,14 @@ function Get-WsStagePackages {
     )
 
     $source = if ($Stage -eq 'system') { @($Context.SystemPackages.packages) } else { @($Context.DevPackages.packages) }
-    @($source | Where-Object { $_.stage -eq $Stage })
+    @($source | Where-Object { $_.stage -eq $Stage -and (Test-WsDirectionMatch -Context $Context -Item $_) })
+}
+
+function Get-WsManualItems {
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)][object]$Context)
+
+    @($Context.Manual.items | Where-Object { Test-WsDirectionMatch -Context $Context -Item $_ })
 }
 
 function Invoke-WsDownload {

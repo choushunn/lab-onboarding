@@ -1,0 +1,143 @@
+{
+  "schemaVersion": 1,
+  "skills": [
+    {
+      "package": "obra/superpowers@systematic-debugging",
+      "name": "systematic-debugging",
+      "directions": ["base"],
+      "reason": "缺陷与异常的分层排查流程"
+    },
+    {
+      "package": "obra/superpowers@test-driven-development",
+      "name": "test-driven-development",
+      "directions": ["base"],
+      "reason": "先写失败用例再实现"
+    },
+    {
+      "package": "obra/superpowers@writing-plans",
+      "name": "writing-plans",
+      "directions": ["base"],
+      "reason": "多步骤任务拆解与计划"
+    },
+    {
+      "package": "obra/superpowers@requesting-code-review",
+      "name": "requesting-code-review",
+      "directions": ["base"],
+      "reason": "交付前的独立审查请求"
+    },
+    {
+      "package": "mattpocock/skills@improve-codebase-architecture",
+      "name": "improve-codebase-architecture",
+      "directions": ["base"],
+      "reason": "模块边界与可测试性改进"
+    },
+    {
+      "package": "xixu-me/skills@github-actions-docs",
+      "name": "github-actions-docs",
+      "directions": ["base"],
+      "reason": "GitHub Actions 工作流编写与排错"
+    },
+    {
+      "package": "vercel-labs/agent-browser@agent-browser",
+      "name": "agent-browser",
+      "directions": ["base"],
+      "reason": "浏览器自动化与页面验证"
+    },
+    {
+      "package": "steipete/clawdis@summarize",
+      "name": "summarize",
+      "directions": ["base"],
+      "reason": "长文档、网页与视频内容摘要"
+    },
+    {
+      "package": "obra/superpowers@brainstorming",
+      "name": "brainstorming",
+      "directions": ["base"],
+      "reason": "功能与方案设计前的需求澄清"
+    },
+    {
+      "package": "obra/superpowers@using-superpowers",
+      "name": "using-superpowers",
+      "directions": ["base"],
+      "reason": "技能发现与调用的统一入口"
+    },
+    {
+      "package": "obra/superpowers@receiving-code-review",
+      "name": "receiving-code-review",
+      "directions": ["base"],
+      "reason": "处理审查意见并验证修复"
+    },
+    {
+      "package": "obra/superpowers@verification-before-completion",
+      "name": "verification-before-completion",
+      "directions": ["base"],
+      "reason": "完成声明前的验证清单"
+    },
+    {
+      "package": "anthropics/skills@pdf",
+      "name": "pdf",
+      "directions": ["base"],
+      "reason": "PDF 读取、拆分与表单处理"
+    },
+    {
+      "package": "anthropics/skills@docx",
+      "name": "docx",
+      "directions": ["base"],
+      "reason": "Word 文档创建与修订"
+    },
+    {
+      "package": "anthropics/skills@xlsx",
+      "name": "xlsx",
+      "directions": ["base"],
+      "reason": "表格读写、公式与图表"
+    },
+    {
+      "package": "anthropics/skills@pptx",
+      "name": "pptx",
+      "directions": ["base"],
+      "reason": "演示文稿创建与编辑"
+    },
+    {
+      "package": "anthropics/skills@frontend-design",
+      "name": "frontend-design",
+      "directions": ["base"],
+      "reason": "前端界面设计与实现"
+    },
+    {
+      "package": "vercel-labs/agent-skills@web-design-guidelines",
+      "name": "web-design-guidelines",
+      "directions": ["base"],
+      "reason": "Web 界面规范审查"
+    },
+    {
+      "package": "vercel-labs/skills@find-skills",
+      "name": "find-skills",
+      "directions": ["base"],
+      "reason": "技能检索、安装与更新入口"
+    },
+    {
+      "package": "mattpocock/skills@grill-me",
+      "name": "grill-me",
+      "directions": ["base"],
+      "reason": "方案与决策的压力测试"
+    },
+    {
+      "package": "mattpocock/skills@triage",
+      "name": "triage",
+      "directions": ["base"],
+      "reason": "Issue 与 PR 的分类和优先级"
+    },
+    {
+      "package": "mattpocock/skills@handoff",
+      "name": "handoff",
+      "directions": ["base"],
+      "reason": "会话交接与上下文压缩"
+    },
+    {
+      "package": "anthropics/skills@skill-creator",
+      "name": "skill-creator",
+      "directions": ["base"],
+      "reason": "创建与维护技能目录"
+    }
+  ]
+}

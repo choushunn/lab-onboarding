@@ -4,6 +4,7 @@
 param(
     [ValidateSet('Dev', 'System', 'All')][string]$Profile = 'All',
     [string[]]$Stages,
+    [Alias('EnvProfile')][ValidateSet('base', 'image', 'embedded')][string[]]$Direction = @('base'),
     [switch]$DryRun,
     [switch]$NoElevate,
     [switch]$IncludeOptional,
@@ -11,6 +12,7 @@ param(
     [switch]$ForceConfig,
     [switch]$ReinstallPackages,
     [switch]$EnableDevExclusions,
+    [switch]$SkipSkills,
     [string]$UserFile,
     [string]$Rollback,
     [switch]$Elevated,
@@ -37,13 +39,16 @@ if ($UserFile) {
 if ($Stages) {
     $Stages = @($Stages | ForEach-Object { $_ -split '[,\s]+' } | Where-Object { $_ })
 }
+if ($Direction) {
+    $Direction = @($Direction | ForEach-Object { $_ -split '[,\s]+' } | Where-Object { $_ })
+}
 if ($WorkspaceRoot) {
     $WorkspaceRoot = [IO.Path]::GetFullPath($WorkspaceRoot)
 }
 
-$context = New-WsContext -RepoRoot $repoRoot -Profile $Profile -Stages $Stages -DryRun:$DryRun -NoElevate:$NoElevate `
+$context = New-WsContext -RepoRoot $repoRoot -Profile $Profile -Direction $Direction -Stages $Stages -DryRun:$DryRun -NoElevate:$NoElevate `
     -IncludeOptional:$IncludeOptional -ForceConfig:$ForceConfig -ReinstallPackages:$ReinstallPackages `
-    -EnableDevExclusions:$EnableDevExclusions -WorkspaceRoot $WorkspaceRoot -UserFile $UserFile -Elevated:$Elevated -RunId $RunId
+    -EnableDevExclusions:$EnableDevExclusions -SkipSkills:$SkipSkills -WorkspaceRoot $WorkspaceRoot -UserFile $UserFile -Elevated:$Elevated -RunId $RunId
 
 if ($Rollback) {
     $manifest = Get-WsRollbackManifest -RepoRoot $repoRoot -Rollback $Rollback
@@ -71,20 +76,21 @@ Write-Host ''
 Write-Host '新机开发环境与系统优化' -ForegroundColor Cyan
 Write-Host ("RunId   : {0}" -f $context.RunId)
 Write-Host ("Profile : {0}" -f $Profile)
+Write-Host ("方向    : {0}" -f ($context.Direction -join ', '))
 Write-Host ("模式    : {0}" -f $(if ($DryRun) { 'DryRun（只输出计划）' } else { '实际执行' }))
 Write-Host '阶段计划：'
 $plan | Format-Table @{ Label = '阶段'; Expression = { $_.Name } }, @{ Label = '需管理员'; Expression = { $_.RequiresAdmin } }, @{ Label = '前置'; Expression = { ($_.Prerequisites -join ', ') } } -AutoSize | Out-Host
 
-$devCount = @($context.DevPackages.packages).Count
+$devCount = @($context.DevPackages.packages | Where-Object { Test-WsDirectionMatch -Context $context -Item $_ }).Count
 $systemCount = @($context.SystemPackages.packages).Count
-$manualCount = @($context.Manual.items).Count
+$manualCount = @(Get-WsManualItems -Context $context).Count
 Write-Host ("包数量  : 开发 {0}，系统 {1}；人工项 {2}" -f $devCount, $systemCount, $manualCount)
 
 if ($DryRun) {
     $context.WorkspaceRoot = Resolve-WsWorkspaceRoot -Context $context -Override $WorkspaceRoot
     Write-Host ("工作空间: {0}" -f $context.WorkspaceRoot)
     Write-Host '人工项：'
-    $context.Manual.items | Format-Table @{ Label = '项目'; Expression = { $_.name } }, @{ Label = '来源'; Expression = { $_.source } }, @{ Label = '说明'; Expression = { $_.reason } } -AutoSize | Out-Host
+    $context.Manual.items | Where-Object { Test-WsDirectionMatch -Context $context -Item $_ } | Format-Table @{ Label = '项目'; Expression = { $_.name } }, @{ Label = '来源'; Expression = { $_.source } }, @{ Label = '说明'; Expression = { $_.reason } } -AutoSize | Out-Host
 }
 
 $requiresAdmin = @($plan | Where-Object { $_.RequiresAdmin }).Count -gt 0
@@ -101,6 +107,7 @@ if ($requiresAdmin -and -not (Test-WsAdmin) -and -not $DryRun) {
             ForceConfig         = [bool]$ForceConfig
             ReinstallPackages   = [bool]$ReinstallPackages
             EnableDevExclusions = [bool]$EnableDevExclusions
+            SkipSkills          = [bool]$SkipSkills
             WorkspaceRoot       = $WorkspaceRoot
             UserFile            = $UserFile
             Stages              = $Stages
@@ -165,7 +172,7 @@ if ($context.Results.Count -gt 0) {
 }
 
 Write-Host '人工项（须人工确认）：' -ForegroundColor Cyan
-$context.Manual.items | Format-Table @{ Label = '项目'; Expression = { $_.name } }, @{ Label = '来源'; Expression = { $_.source } }, @{ Label = '说明'; Expression = { $_.reason } } -AutoSize | Out-Host
+$context.Manual.items | Where-Object { Test-WsDirectionMatch -Context $context -Item $_ } | Format-Table @{ Label = '项目'; Expression = { $_.name } }, @{ Label = '来源'; Expression = { $_.source } }, @{ Label = '说明'; Expression = { $_.reason } } -AutoSize | Out-Host
 
 Write-Host ("日志与清单：{0}" -f $context.RunDirectory)
 Write-Host ("退出码：{0}" -f $exitCode)

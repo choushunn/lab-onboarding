@@ -1,13 +1,17 @@
 # 新机开发环境与系统优化
 
-本仓库是新机的自动搭建参考工程：一个入口 `bootstrap.ps1`，声明式数据在 `data/`，两份文档分别覆盖开发环境与系统环境。
+本仓库是新机的自动搭建参考工程：一个入口 `bootstrap.ps1`，声明式数据在 `data/`，两份文档分别覆盖开发环境与系统环境。安装内容按研究方向组织，默认只装 `base`。
 
 ## 快速开始
 
 ```powershell
 .\bootstrap.ps1 -Profile All -DryRun
 .\bootstrap.ps1 -Profile All
+.\bootstrap.ps1 -Profile All -Direction image
+.\bootstrap.ps1 -Profile All -Direction embedded
 ```
+
+`-Direction` 取 `base`、`image`、`embedded`，可用逗号合并；`base` 始终保留。
 
 首次运行会询问 Git 身份、AI 供应商与模型、CC Switch 路由端口，答案写入 gitignore 的 `data/user.json`。仓库不保存个人姓名、邮箱、API Key 或供应商令牌。
 
@@ -29,6 +33,8 @@
 | `just verify` | 开发环境验收 |
 | `just rollback` | 回滚最近一次配置变更，不卸载软件 |
 | `just doctor` | 当前进程环境只读体检 |
+| `just skills-dry` / `just skills-sync` | 同步通用目录 `%USERPROFILE%\.agents\skills` 中的 Agent Skills |
+| `just skills-update` / `just skills-remove` | 更新或移除清单内的全局技能 |
 | `just lint-ps` / `just test-ps` | PowerShell 静态检查与测试 |
 
 ## 项目结构
@@ -37,7 +43,7 @@
 bootstrap.ps1                 唯一安装入口：参数、提权、阶段调度、汇总、退出码
 Justfile                      搭建、验收、回滚与语言验证入口
 src/WsBootstrap/              阶段、包、配置、回滚实现
-data/                         包、镜像、路径、模板与用户配置示例
+data/                         包、研究方向、技能清单、镜像、路径、模板与用户配置示例
 docs/                         开发环境搭建、系统环境优化
 scripts/                      check-env、proxy-on 与 PSScriptAnalyzer 配置
 tests/                        Pester 测试与用户配置 fixture
@@ -46,8 +52,10 @@ AGENTS.md                     代理规则唯一真源
 
 ## 边界
 
+- 安装内容按研究方向筛选：`base` 为通用工具；`image` 追加 OpenCV、CUDA 与 Nsight；`embedded` 追加 ARM GNU Toolchain、OpenOCD、pyOCD、Keil MDK 与 STM32 人工项。
 - 不安装 WSL、Docker、Dev Container；全部 Windows 原生。
 - 机器级阶段需要管理员权限；`-NoElevate` 只跳过机器级阶段。
 - 回滚不卸载已安装软件，只还原配置文件、PATH、环境变量、注册表值与 Defender 排除项；运行后被修改的文件保留现状并记为冲突。
 - Defender 排除项默认关闭，`-EnableDevExclusions` 才添加。
+- Config 阶段默认同步 `data/skills.json` 中的 Agent Skills；`-SkipSkills` 跳过，失败只告警。
 - 仓库不保存密钥、令牌或个人配置备份；提交信息使用 Conventional Commits。

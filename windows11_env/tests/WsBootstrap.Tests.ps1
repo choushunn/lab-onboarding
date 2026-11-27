@@ -16,6 +16,54 @@
     $global:WsWheelFixture = $script:wheelFixture
 }
 
+Describe 'Skills 同步阶段' {
+    It '默认调用同步脚本并记录成功' {
+        InModuleScope WsBootstrap -Parameters @{ Repo = $script:repo; Directory = $TestDrive } {
+            param($Repo, $Directory)
+            Mock Invoke-WsProcess { [pscustomobject]@{ ExitCode = 0; Output = @('[SKIP] 已安装：demo') } }
+            $context = New-WsContext -RepoRoot $Repo
+            $context.LogPath = Join-Path $Directory 'skills.log'
+            Invoke-WsSkillsSync -Context $context
+            $context.SkillsStatus | Should -Be 'Succeeded'
+            Should -Invoke Invoke-WsProcess -Times 1 -ParameterFilter { ($Arguments -join ' ') -match 'sync-skills\.ps1' }
+            (Get-Content -LiteralPath $context.LogPath -Raw) | Should -Match '\[Skills\]'
+        }
+    }
+
+    It 'SkipSkills 时不调用脚本' {
+        InModuleScope WsBootstrap -Parameters @{ Repo = $script:repo } {
+            param($Repo)
+            Mock Invoke-WsProcess { throw '不应调用' }
+            $context = New-WsContext -RepoRoot $Repo -SkipSkills
+            Invoke-WsSkillsSync -Context $context
+            $context.SkillsStatus | Should -Be 'Skipped'
+            Should -Invoke Invoke-WsProcess -Times 0
+        }
+    }
+
+    It 'DryRun 只记录计划' {
+        InModuleScope WsBootstrap -Parameters @{ Repo = $script:repo } {
+            param($Repo)
+            Mock Invoke-WsProcess { throw '不应调用' }
+            $context = New-WsContext -RepoRoot $Repo -DryRun
+            Invoke-WsSkillsSync -Context $context
+            $context.SkillsStatus | Should -Be 'Planned'
+            Should -Invoke Invoke-WsProcess -Times 0
+        }
+    }
+
+    It '脚本失败时记录告警但不中断' {
+        InModuleScope WsBootstrap -Parameters @{ Repo = $script:repo } {
+            param($Repo)
+            Mock Invoke-WsProcess { [pscustomobject]@{ ExitCode = 1; Output = @('[ERROR] boom') } }
+            $context = New-WsContext -RepoRoot $Repo
+            Invoke-WsSkillsSync -Context $context
+            $context.SkillsStatus | Should -Be 'Failed'
+            $context.Warnings.Count | Should -Be 1
+        }
+    }
+}
+
 Describe '配置写入' {
     BeforeEach {
         $script:context = New-WsContext -RepoRoot $script:repo
@@ -307,6 +355,19 @@ Describe '验收' {
             $report.runId | Should -Be $context.RunId
             $report.tools[0].Name | Should -Be 'git'
             $report.platform.psVersion | Should -Not -BeNullOrEmpty
+        }
+    }
+
+    It 'Skills 缺失检查把 -and 当运算符而非参数' {
+        InModuleScope WsBootstrap -Parameters @{ Repo = $script:repo; Directory = $TestDrive } {
+            param($Repo, $Directory)
+            $ErrorActionPreference = 'Stop'
+            Mock Resolve-WsToolPath { 'C:\fake.exe' }
+            Mock Invoke-WsProcess { [pscustomobject]@{ ExitCode = 0; Output = @('demo 1.0') } }
+            Mock Test-WsPortListening { $true }
+            $context = New-WsContext -RepoRoot $Repo -Direction base
+            $context.LogPath = Join-Path $Directory 'skills-check.log'
+            { Test-WsEnvironment -Context $context } | Should -Not -Throw
         }
     }
 }

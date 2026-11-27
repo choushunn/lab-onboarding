@@ -81,6 +81,13 @@ function Test-WsData {
         vscodeExtension = @('packageId')
     }
     $ids = @{}
+    $directionIds = @($Context.Directions.directions | ForEach-Object { $_.id })
+    if ($Context.Directions.schemaVersion -ne 1) {
+        $problems.Add('directions.json schemaVersion 必须为 1')
+    }
+    if ($directionIds -notcontains 'base') {
+        $problems.Add('directions.json 必须包含 base')
+    }
 
     foreach ($package in @(@($Context.DevPackages.packages) + @($Context.SystemPackages.packages))) {
         foreach ($field in @('id', 'name', 'provider', 'stage', 'required')) {
@@ -96,6 +103,11 @@ function Test-WsData {
         }
         if ($package.PSObject.Properties.Name -contains 'condition' -and $package.condition -and $conditions -notcontains $package.condition) {
             $problems.Add("未知 condition：$($package.condition)（$($package.id)）")
+        }
+        foreach ($direction in @($package.directions)) {
+            if ($direction -and $directionIds -notcontains $direction) {
+                $problems.Add("未知 direction：$direction（$($package.id)）")
+            }
         }
         if ($providerFields.ContainsKey($package.provider)) {
             foreach ($field in $providerFields[$package.provider]) {
@@ -117,6 +129,11 @@ function Test-WsData {
     foreach ($item in @($Context.Manual.items)) {
         if ([string]::IsNullOrWhiteSpace([string]$item.name)) {
             $problems.Add('manual.json 存在缺少 name 的条目')
+        }
+        foreach ($direction in @($item.directions)) {
+            if ($direction -and $directionIds -notcontains $direction) {
+                $problems.Add("manual.json 存在未知 direction：$direction（$($item.name)）")
+            }
         }
     }
     if ($Context.Mirrors.schemaVersion -ne 1) {
@@ -270,6 +287,39 @@ function Invoke-WsOptionalStage {
     Update-WsProcessPath -Context $Context
 }
 
+function Invoke-WsSkillsSync {
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)][object]$Context)
+
+    if ($Context.SkipSkills) {
+        $Context.SkillsStatus = 'Skipped'
+        Write-WsLog '跳过 Agent Skills 同步（-SkipSkills）' -Level SKIP -Context $Context
+        return
+    }
+    if ($Context.DryRun) {
+        $Context.SkillsStatus = 'Planned'
+        Write-WsLog 'DryRun：将同步 Agent Skills' -Level SKIP -Context $Context
+        return
+    }
+    $scriptPath = Join-Path $Context.RepoRoot 'scripts\sync-skills.ps1'
+    $result = Invoke-WsProcess -FilePath 'pwsh' -Arguments @('-NoProfile', '-File', $scriptPath, '-Direction', ($Context.Direction -join ','))
+    foreach ($line in @($result.Output)) {
+        $text = [string]$line
+        if ($text.Trim()) {
+            Write-WsLog ('[Skills] ' + $text) -Context $Context
+        }
+    }
+    if ($result.ExitCode -ne 0) {
+        $Context.SkillsStatus = 'Failed'
+        $message = "Agent Skills 同步失败（退出码 $($result.ExitCode)）"
+        $Context.Warnings.Add($message)
+        Write-WsLog $message -Level WARN -Context $Context
+        return
+    }
+    $Context.SkillsStatus = 'Succeeded'
+    Write-WsLog 'Agent Skills 同步完成' -Context $Context
+}
+
 function Invoke-WsConfigStage {
     [CmdletBinding()]
     param([Parameter(Mandatory = $true)][object]$Context)
@@ -289,6 +339,7 @@ function Invoke-WsConfigStage {
         Write-WsLog '跳过 Claude/Trae 配置（writeAiConfig=false）' -Level SKIP -Context $Context
     }
     Set-WsTerminalAppearance -Context $Context
+    Invoke-WsSkillsSync -Context $Context
 }
 
 function ConvertTo-WsVersion {
@@ -442,8 +493,6 @@ function Test-WsEnvironment {
         @{ Name = 'ninja'; Args = @('--version') },
         @{ Name = 'clangd'; Args = @('--version') },
         @{ Name = 'ccache'; Args = @('--version') },
-        @{ Name = 'openocd'; Args = @('--version') },
-        @{ Name = 'pyocd'; Args = @('--version') },
         @{ Name = 'ruff'; Args = @('--version') },
         @{ Name = 'pre-commit'; Args = @('--version') },
         @{ Name = 'gitleaks'; Args = @('version') },
@@ -460,13 +509,21 @@ function Test-WsEnvironment {
         @{ Name = 'go'; Args = @('version') },
         @{ Name = 'rustc'; Args = @('--version') },
         @{ Name = 'cargo'; Args = @('--version') },
-        @{ Name = 'dotnet'; Args = @('--version') },
-        @{ Name = 'arm-none-eabi-gcc'; Args = @('--version') }
+        @{ Name = 'dotnet'; Args = @('--version') }
         )
-        if (Get-WsGpuAvailability -Context $Context) {
-            $specs += @{ Name = 'nvcc'; Args = @('--version') }
-        } else {
-            $warnings.Add('未检测到 NVIDIA GPU，跳过 nvcc 检查')
+        if ($Context.Direction -contains 'embedded') {
+            $specs += @(
+                @{ Name = 'openocd'; Args = @('--version') },
+                @{ Name = 'pyocd'; Args = @('--version') },
+                @{ Name = 'arm-none-eabi-gcc'; Args = @('--version') }
+            )
+        }
+        if ($Context.Direction -contains 'image') {
+            if (Get-WsGpuAvailability -Context $Context) {
+                $specs += @{ Name = 'nvcc'; Args = @('--version') }
+            } else {
+                $warnings.Add('未检测到 NVIDIA GPU，跳过 nvcc 检查')
+            }
         }
     }
 
@@ -497,6 +554,26 @@ function Test-WsEnvironment {
                 Select-Object -First 1
             if (-not $module -or $module.Version -lt [version]$moduleSpec.Minimum) {
                 $failures.Add("缺少 $($moduleSpec.Name) $($moduleSpec.Minimum) 或更高版本")
+            }
+        }
+    }
+
+    if ($Context.Profile -ne 'System' -and -not $Context.SkipSkills) {
+        $skillsDataPath = Join-Path $Context.DataRoot 'skills.json'
+        if (-not (Test-Path -LiteralPath $skillsDataPath)) {
+            $warnings.Add('缺少 data/skills.json，跳过 Agent Skills 检查')
+        } else {
+            $skillsData = Get-Content -LiteralPath $skillsDataPath -Raw | ConvertFrom-Json
+            $missing = @($skillsData.skills | Where-Object {
+                    (Test-WsDirectionMatch -Context $Context -Item $_) -and
+                    -not (Test-Path -LiteralPath (Join-Path (Join-Path $home '.agents\skills') ($_.name + '\SKILL.md')))
+                } | ForEach-Object { $_.name })
+            if ($missing.Count -gt 0) {
+                $preview = ($missing | Select-Object -First 5) -join ', '
+                if ($missing.Count -gt 5) {
+                    $preview += ' 等'
+                }
+                $warnings.Add("缺少 $($missing.Count) 个 Agent Skill：$preview（运行 just skills-sync）")
             }
         }
     }

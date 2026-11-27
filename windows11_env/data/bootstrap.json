@@ -21,14 +21,15 @@
     "gradle": "C:\\Programs\\gradle-9.4.1",
     "vcpkg": "C:\\Programs\\vcpkg",
     "armGnu": "C:\\Programs\\arm-gnu-toolchain-13.3.rel1-mingw-w64-i686-arm-none-eabi",
-    "pnpmStore": "D:\\.pnpm-store",
+    "pnpmStore": "C:\\Programs\\.pnpm-store",
     "pnpmStoreFallback": "C:\\Workspace\\.pnpm-store",
     "terminalSettings": "{home}\\AppData\\Local\\Packages\\Microsoft.WindowsTerminal_8wekyb3d8bbwe\\LocalState\\settings.json",
     "globalAgents": [
       "{home}\\.codex\\AGENTS.md",
       "{home}\\.claude\\CLAUDE.md",
       "{home}\\.trae-cn\\user_rules\\rule-global.md"
-    ]
+    ],
+    "skills": "{home}\\.agents\\skills"
   },
   "proxy": {
     "host": "127.0.0.1",

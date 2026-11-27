@@ -20,6 +20,18 @@ Describe '入口集成' {
         Remove-Item -LiteralPath (Join-Path $script:repo "logs\runs\$runId") -Recurse -Force -ErrorAction SilentlyContinue
     }
 
+    It 'Direction 传参并筛选人工项' {
+        $runId = 'pester-direction'
+        $output = & $script:pwsh -NoProfile -ExecutionPolicy Bypass -File $script:bootstrap `
+            -Profile All -Direction embedded -DryRun -NoElevate -UserFile $script:fixture -RunId $runId 2>&1
+        $code = $LASTEXITCODE
+        $text = $output | Out-String
+        $code | Should -Be 0 -Because $text
+        $text | Should -Match '方向\s*:\s*base, embedded'
+        $text | Should -Match 'STM32CubeMX'
+        Remove-Item -LiteralPath (Join-Path $script:repo "logs\runs\$runId") -Recurse -Force -ErrorAction SilentlyContinue
+    }
+
     It '非 ASCII 用户目录在提权前退出 2' {
         $originalProfile = $env:USERPROFILE
         $originalName = $env:USERNAME
