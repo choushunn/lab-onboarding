@@ -463,6 +463,29 @@ Describe '包安装' {
         }
     }
 
+    It 'npm 安装显式使用配置镜像' {
+        InModuleScope WsBootstrap -Parameters @{ Repo = $script:repo; Directory = $TestDrive } {
+            param($Repo, $Directory)
+            $context = New-WsContext -RepoRoot $Repo
+            $context.LogPath = Join-Path $Directory 'npm-registry.log'
+            $global:WsNpmInstallArgs = $null
+            Mock Invoke-WsProcess {
+                param($FilePath, $Arguments)
+                if (($Arguments -join ' ') -like 'ls -g*') {
+                    return [pscustomobject]@{ ExitCode = 1; Output = @() }
+                }
+                $global:WsNpmInstallArgs = @($Arguments)
+                return [pscustomobject]@{ ExitCode = 0; Output = @() }
+            }
+            $package = [pscustomobject]@{
+                id = 'x'; name = 'X'; provider = 'npm'; packageId = '@scope/pkg'; required = $true
+            }
+            Install-WsNpmPackage -Context $context -Package $package | Should -Be 'Installed'
+            $global:WsNpmInstallArgs | Should -Contain '--registry'
+            $global:WsNpmInstallArgs | Should -Contain $context.Mirrors.npm.registry
+        }
+    }
+
     It 'zipDownload 下载解压到目标并跳过已存在' {
         InModuleScope WsBootstrap -Parameters @{ Repo = $script:repo; Directory = $TestDrive; Zip = $script:zipFixture } {
             param($Repo, $Directory, $Zip)

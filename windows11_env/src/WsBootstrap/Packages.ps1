@@ -658,7 +658,10 @@ function Install-WsNpmPackage {
             return 'AlreadyPresent'
         }
     }
-    $result = Invoke-WsProcess -FilePath 'npm' -Arguments @('install', '-g', ($Package.packageId + '@latest'))
+    $result = Invoke-WsProcess -FilePath 'npm' -Arguments @(
+        'install', '-g', ($Package.packageId + '@latest'),
+        '--registry', [string]$Context.Mirrors.npm.registry
+    )
     if ($result.ExitCode -ne 0) {
         throw "npm 安装 $($Package.packageId) 失败"
     }

@@ -251,7 +251,10 @@ function Initialize-WsNodeToolchain {
     Write-WsLog "corepack 与 npm 镜像：$env:COREPACK_NPM_REGISTRY" -Context $Context
     $corepackPath = (Get-Command 'corepack' -ErrorAction SilentlyContinue).Source
     if (-not $corepackPath) {
-        $install = Invoke-WsProcess -FilePath 'npm' -Arguments @('install', '-g', 'corepack')
+        $install = Invoke-WsProcess -FilePath 'npm' -Arguments @(
+            'install', '-g', 'corepack',
+            '--registry', [string]$Context.Mirrors.npm.registry
+        )
         if ($install.ExitCode -ne 0) {
             throw 'corepack 安装失败'
         }
@@ -275,7 +278,10 @@ function Initialize-WsNodeToolchain {
             if (($arguments -join ' ') -eq 'prepare pnpm@latest --activate') {
                 $detail = (@($result.Output) -join ' ').Trim()
                 Write-WsLog "corepack prepare 失败，改用 npm 安装 pnpm：$detail" -Level WARN -Context $Context
-                $fallback = Invoke-WsProcess -FilePath 'npm' -Arguments @('install', '-g', 'pnpm@latest')
+                $fallback = Invoke-WsProcess -FilePath 'npm' -Arguments @(
+                    'install', '-g', 'pnpm@latest',
+                    '--registry', [string]$Context.Mirrors.npm.registry
+                )
                 if ($fallback.ExitCode -eq 0) {
                     $prefix = @((Invoke-WsProcess -FilePath 'npm' -Arguments @('prefix', '-g')).Output) | Select-Object -Last 1
                     $pnpmCommand = Join-Path ([string]$prefix) 'pnpm.cmd'
