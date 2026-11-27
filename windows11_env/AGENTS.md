@@ -73,6 +73,7 @@
 ## 网络
 
 - `github.com:443` 直连被阻断，需要 HTTPS 克隆或下载发布包时先在终端执行 `scripts\proxy-on.ps1`。
+- 代理端口从 Windows 系统代理读取，系统代理未启用时回退 `data/bootstrap.json` 的 `proxy.host` 与 `proxy.port`；不在 SSH 或 git 配置中写死端口。
 - SSH 22 端口直连可用，`ssh -T git@github.com` 不需要代理。
 - `api.github.com` 直连可用，不经过代理。
 - 包管理器统一走 `data/mirrors.json` 的国内镜像；PSGallery、VS Code Marketplace 与 winget 无稳定国内镜像，直连。

@@ -86,7 +86,7 @@
     },
     {
       "name": "Clash Party 订阅与系统代理",
-      "reason": "导入机场订阅并开启系统代理或 TUN，端口与 bootstrap.json 的 proxy.port 一致",
+      "reason": "导入机场订阅并开启系统代理或 TUN；bootstrap 读取 Windows 系统代理端口，未启用时回退 bootstrap.json 的 proxy.port",
       "source": "Clash Party",
       "target": "系统代理"
     },

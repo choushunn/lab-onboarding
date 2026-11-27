@@ -269,8 +269,9 @@ function Invoke-WsProxyStage {
     param([Parameter(Mandatory = $true)][object]$Context)
 
     $proxy = $Context.Bootstrap.proxy
-    if (-not (Test-WsPortListening -HostName $proxy.host -Port $proxy.port)) {
-        Write-WsLog "未检测到代理 $($proxy.host):$($proxy.port)，跳过 Proxy 阶段。启动代理后运行 just bootstrap -Stages Proxy 补齐。" -Level WARN -Context $Context
+    $endpoint = Get-WsProxyEndpoint -FallbackHost ([string]$proxy.host) -FallbackPort ([int]$proxy.port)
+    if (-not (Test-WsPortListening -HostName $endpoint.Host -Port $endpoint.Port)) {
+        Write-WsLog "未检测到代理 $($endpoint.Host):$($endpoint.Port)（$($endpoint.Source)），跳过 Proxy 阶段。启动代理后运行 just bootstrap -Stages Proxy 补齐。" -Level WARN -Context $Context
         return
     }
     $packages = @(Get-WsStagePackages -Context $Context -Stage 'proxy')
@@ -529,7 +530,8 @@ function Test-WsEnvironment {
 
     $proxyTools = @('pyocd', 'ruff', 'pre-commit')
     $proxy = $Context.Bootstrap.proxy
-    $proxyReady = Test-WsPortListening -HostName $proxy.host -Port $proxy.port
+    $endpoint = Get-WsProxyEndpoint -FallbackHost ([string]$proxy.host) -FallbackPort ([int]$proxy.port)
+    $proxyReady = Test-WsPortListening -HostName $endpoint.Host -Port $endpoint.Port
     foreach ($spec in $specs) {
         $toolPath = Resolve-WsToolPath -Context $Context -Name $spec.Name
         if (-not $toolPath) {

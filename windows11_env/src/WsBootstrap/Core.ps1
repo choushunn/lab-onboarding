@@ -338,6 +338,63 @@ function Test-WsPortListening {
     }
 }
 
+function ConvertFrom-WsProxyServerString {
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)][string]$Value)
+
+    $server = $Value.Trim()
+    if (-not $server) {
+        return $null
+    }
+    if ($server -match '=') {
+        $entries = @()
+        foreach ($segment in ($server -split ';')) {
+            if ($segment -match '^\s*(?<scheme>[A-Za-z0-9]+)\s*=\s*(?<endpoint>.+?)\s*$') {
+                $entries += [pscustomobject]@{ Scheme = $Matches.scheme.ToLowerInvariant(); Endpoint = $Matches.endpoint }
+            }
+        }
+        $picked = $null
+        foreach ($scheme in @('https', 'http', 'socks5', 'socks')) {
+            $picked = @($entries | Where-Object { $_.Scheme -eq $scheme } | Select-Object -First 1)
+            if ($picked.Count -gt 0) {
+                break
+            }
+        }
+        if ($picked.Count -eq 0 -and $entries.Count -gt 0) {
+            $picked = @($entries[0])
+        }
+        if ($picked.Count -eq 0) {
+            return $null
+        }
+        $server = [string]$picked[0].Endpoint
+    }
+    if ($server -match '^(?<host>\[[^\]]+\]|[^:\s]+):(?<port>\d{1,5})$') {
+        $port = [int]$Matches.port
+        if ($port -lt 1 -or $port -gt 65535) {
+            return $null
+        }
+        return [pscustomobject]@{ Host = $Matches.host; Port = $port }
+    }
+    $null
+}
+
+function Get-WsProxyEndpoint {
+    [CmdletBinding()]
+    param(
+        [string]$FallbackHost = '127.0.0.1',
+        [int]$FallbackPort = 7890
+    )
+
+    $settings = Get-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings' -ErrorAction SilentlyContinue
+    if ($settings -and [int]$settings.ProxyEnable -eq 1 -and $settings.ProxyServer) {
+        $endpoint = ConvertFrom-WsProxyServerString -Value ([string]$settings.ProxyServer)
+        if ($endpoint) {
+            return [pscustomobject]@{ Host = $endpoint.Host; Port = $endpoint.Port; Source = 'System' }
+        }
+    }
+    [pscustomobject]@{ Host = $FallbackHost; Port = $FallbackPort; Source = 'Bootstrap' }
+}
+
 function Invoke-WsProcess {
     [CmdletBinding()]
     param(

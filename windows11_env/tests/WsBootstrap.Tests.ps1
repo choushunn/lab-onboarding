@@ -748,3 +748,44 @@ Describe 'Proxy 阶段' {
         }
     }
 }
+
+Describe '代理端点' {
+    It '解析主机与端口' {
+        InModuleScope WsBootstrap {
+            $endpoint = ConvertFrom-WsProxyServerString -Value '127.0.0.1:7897'
+            $endpoint.Host | Should -Be '127.0.0.1'
+            $endpoint.Port | Should -Be 7897
+        }
+    }
+
+    It '按 https、http、socks 优先级取分段' {
+        InModuleScope WsBootstrap {
+            (ConvertFrom-WsProxyServerString -Value 'socks=127.0.0.1:1080;http=127.0.0.1:7890').Port | Should -Be 7890
+        }
+    }
+
+    It '拒绝无法解析的值' {
+        InModuleScope WsBootstrap {
+            ConvertFrom-WsProxyServerString -Value 'proxy.local' | Should -BeNullOrEmpty
+            ConvertFrom-WsProxyServerString -Value '127.0.0.1:99999' | Should -BeNullOrEmpty
+        }
+    }
+
+    It '系统代理开启时使用系统端口' {
+        InModuleScope WsBootstrap {
+            Mock Get-ItemProperty { [pscustomobject]@{ ProxyEnable = 1; ProxyServer = '127.0.0.1:7897' } }
+            $endpoint = Get-WsProxyEndpoint -FallbackHost '127.0.0.1' -FallbackPort 7890
+            $endpoint.Source | Should -Be 'System'
+            $endpoint.Port | Should -Be 7897
+        }
+    }
+
+    It '系统代理关闭时回退 bootstrap.json 端口' {
+        InModuleScope WsBootstrap {
+            Mock Get-ItemProperty { [pscustomobject]@{ ProxyEnable = 0; ProxyServer = '127.0.0.1:7897' } }
+            $endpoint = Get-WsProxyEndpoint -FallbackHost '127.0.0.1' -FallbackPort 7890
+            $endpoint.Source | Should -Be 'Bootstrap'
+            $endpoint.Port | Should -Be 7890
+        }
+    }
+}
