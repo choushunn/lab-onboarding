@@ -299,6 +299,11 @@ function Initialize-WsNodeToolchain {
             throw ('corepack ' + ($arguments -join ' ') + ' 失败')
         }
     }
+    $yarnPrepare = Invoke-WsProcess -FilePath $corepackPath -Arguments @('prepare', 'yarn@latest', '--activate')
+    if ($yarnPrepare.ExitCode -ne 0) {
+        $detail = (@($yarnPrepare.Output) -join ' ').Trim()
+        Write-WsLog "corepack 激活 yarn 失败：$detail" -Level WARN -Context $Context
+    }
     $store = Resolve-WsPnpmStore -Context $Context
     $result = Invoke-WsProcess -FilePath $pnpmCommand -Arguments @('config', 'set', 'store-dir', $store)
     if ($result.ExitCode -ne 0) {

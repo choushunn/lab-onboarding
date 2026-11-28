@@ -54,7 +54,6 @@
     { "id": "npm-open-code-review", "name": "open-code-review", "provider": "npm", "packageId": "@alibaba-group/open-code-review", "stage": "toolchain", "required": false },
     { "id": "npm-tauri-cli", "name": "Tauri CLI", "provider": "npm", "packageId": "@tauri-apps/cli", "stage": "toolchain", "required": false },
     { "id": "npm-lv-font-conv", "name": "lv_font_conv", "provider": "npm", "packageId": "lv_font_conv", "stage": "toolchain", "required": false },
-    { "id": "npm-yarn", "name": "yarn", "provider": "npm", "packageId": "yarn", "stage": "toolchain", "required": false },
 
     { "id": "pacman-make", "name": "mingw32-make", "provider": "pacman", "packageId": "mingw-w64-ucrt-x86_64-make", "stage": "toolchain", "required": true },
     { "id": "pacman-gcc", "name": "GCC", "provider": "pacman", "packageId": "mingw-w64-ucrt-x86_64-gcc", "stage": "toolchain", "required": true, "verifyCommand": "gcc", "verifyArgs": ["--version"] },
