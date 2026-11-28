@@ -98,6 +98,8 @@ function New-WsContext {
         SkillsStatus          = 'NotRun'
         WingetSource          = $null
         WingetSourceChecked   = $false
+        WingetInstalledIds    = $null
+        WingetInstalledLoaded = $false
         WorkspaceRootOverride = $WorkspaceRoot
         WorkspaceRoot         = $null
         UserFile              = $UserFile

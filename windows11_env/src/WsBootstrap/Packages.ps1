@@ -46,7 +46,59 @@ function Invoke-WsDownload {
         [Parameter(Mandatory = $true)][string]$OutFile
     )
 
-    Invoke-WebRequest -Uri $Uri -OutFile $OutFile
+    $directory = Split-Path -Parent $OutFile
+    if ($directory -and -not (Test-Path -LiteralPath $directory)) {
+        New-Item -ItemType Directory -Path $directory -Force | Out-Null
+    }
+    $activity = '下载 ' + (Split-Path -Leaf $OutFile)
+    $handler = [System.Net.Http.HttpClientHandler]::new()
+    $handler.AllowAutoRedirect = $true
+    $client = [System.Net.Http.HttpClient]::new($handler)
+    $client.Timeout = [System.Threading.Timeout]::InfiniteTimeSpan
+    [void]$client.DefaultRequestHeaders.UserAgent.TryParseAdd('wsbootstrap/1.0')
+    $stream = $null
+    $file = $null
+    try {
+        $response = $client.GetAsync($Uri, [System.Net.Http.HttpCompletionOption]::ResponseHeadersRead).GetAwaiter().GetResult()
+        try {
+            [void]$response.EnsureSuccessStatusCode()
+            $total = $response.Content.Headers.ContentLength
+            $stream = $response.Content.ReadAsStreamAsync().GetAwaiter().GetResult()
+            $file = [IO.File]::Create($OutFile)
+            $buffer = [byte[]]::new(81920)
+            $written = 0L
+            $lastPercent = -1
+            while (($read = $stream.Read($buffer, 0, $buffer.Length)) -gt 0) {
+                $file.Write($buffer, 0, $read)
+                $written += $read
+                if ($total -and $total -gt 0) {
+                    $percent = [int][Math]::Floor(($written * 100) / $total)
+                    if ($percent -ne $lastPercent) {
+                        Write-Progress -Activity $activity -Status ('{0}%  {1:N1}/{2:N1} MB' -f $percent, ($written / 1MB), ($total / 1MB)) -PercentComplete $percent
+                        $lastPercent = $percent
+                    }
+                } else {
+                    Write-Progress -Activity $activity -Status ('{0:N1} MB' -f ($written / 1MB))
+                }
+            }
+            Write-Progress -Activity $activity -Completed
+        } finally {
+            $response.Dispose()
+        }
+    } catch {
+        Write-Progress -Activity $activity -Completed
+        Remove-Item -LiteralPath $OutFile -Force -ErrorAction SilentlyContinue
+        throw
+    } finally {
+        if ($file) {
+            $file.Dispose()
+        }
+        if ($stream) {
+            $stream.Dispose()
+        }
+        $client.Dispose()
+        $handler.Dispose()
+    }
 }
 
 function Get-WsHttpText {
@@ -96,10 +148,96 @@ function Expand-WsArchive {
     Expand-Archive -LiteralPath $Path -DestinationPath $DestinationPath -Force
 }
 
+function Initialize-WsWingetInstalledState {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][object]$Context,
+        [object[]]$Packages = @()
+    )
+
+    if ($Context.WingetInstalledLoaded) {
+        return
+    }
+    $plannedStages = @()
+    foreach ($stage in @('base', 'toolchain', 'optional', 'system', 'proxy')) {
+        $stageName = switch ($stage) {
+            'base' { 'Base' }
+            'toolchain' { 'Toolchain' }
+            'optional' { 'Optional' }
+            'system' { 'System' }
+            'proxy' { 'Proxy' }
+        }
+        if ($Context.PlanStages -contains $stageName) {
+            $plannedStages += $stage
+        }
+    }
+    if ($plannedStages.Count -gt 0) {
+        $all = @($Context.DevPackages.packages) + @($Context.SystemPackages.packages)
+        $wingetPackages = @($all | Where-Object {
+                $_.provider -eq 'winget' -and $_.packageId -and
+                $plannedStages -contains $_.stage -and
+                (Test-WsDirectionMatch -Context $Context -Item $_)
+            })
+    } else {
+        $wingetPackages = @($Packages | Where-Object { $_.provider -eq 'winget' -and $_.packageId })
+    }
+    if ($wingetPackages.Count -eq 0) {
+        return
+    }
+    $Context.WingetInstalledLoaded = $true
+    $installed = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    $bulk = Invoke-WsProcess -FilePath 'winget' -Arguments @('list', '--accept-source-agreements')
+    if ($bulk.ExitCode -eq 0) {
+        $text = (@($bulk.Output) | ForEach-Object { [string]$_ }) -join "`n"
+        foreach ($package in $wingetPackages) {
+            $id = [string]$package.packageId
+            $pattern = '(?m)(?<!\S)' + [regex]::Escape($id) + '(?!\S)'
+            if ([regex]::IsMatch($text, $pattern)) {
+                [void]$installed.Add($id)
+            }
+        }
+        Write-WsLog ("winget 批量列表命中 {0}/{1}" -f $installed.Count, $wingetPackages.Count) -Context $Context
+    } else {
+        Write-WsLog 'winget list 失败，逐包检测' -Level WARN -Context $Context
+    }
+
+    $missing = @($wingetPackages | ForEach-Object { [string]$_.packageId } | Where-Object { -not $installed.Contains($_) })
+    if ($missing.Count -gt 0) {
+        try {
+            $results = $missing | ForEach-Object -Parallel {
+                $id = $_
+                $result = & winget list --id $id -e --accept-source-agreements 2>&1
+                [pscustomobject]@{ Id = $id; Installed = ($LASTEXITCODE -eq 0) }
+            } -ThrottleLimit 8
+            foreach ($result in @($results)) {
+                if ($result.Installed) {
+                    [void]$installed.Add([string]$result.Id)
+                }
+            }
+        } catch {
+            Write-WsLog "并行检测失败，回退串行：$($_.Exception.Message)" -Level WARN -Context $Context
+            foreach ($id in $missing) {
+                $result = Invoke-WsProcess -FilePath 'winget' -Arguments @('list', '--id', $id, '-e', '--accept-source-agreements')
+                if ($result.ExitCode -eq 0) {
+                    [void]$installed.Add($id)
+                }
+            }
+        }
+    }
+    $Context.WingetInstalledIds = $installed
+    Write-WsLog ("winget 已安装检测完成：{0}/{1}" -f $installed.Count, $wingetPackages.Count) -Context $Context
+}
+
 function Test-WsWingetInstalled {
     [CmdletBinding()]
-    param([Parameter(Mandatory = $true)][string]$PackageId)
+    param(
+        [object]$Context,
+        [Parameter(Mandatory = $true)][string]$PackageId
+    )
 
+    if ($Context -and $Context.WingetInstalledLoaded -and $null -ne $Context.WingetInstalledIds) {
+        return $Context.WingetInstalledIds.Contains($PackageId)
+    }
     $result = Invoke-WsProcess -FilePath 'winget' -Arguments @(
         'list', '--id', $PackageId, '-e', '--accept-source-agreements'
     )
@@ -269,7 +407,7 @@ function Install-WsWingetPackage {
         [Parameter(Mandatory = $true)][object]$Package
     )
 
-    if (-not $Context.ReinstallPackages -and (Test-WsWingetInstalled -PackageId $Package.packageId)) {
+    if (-not $Context.ReinstallPackages -and (Test-WsWingetInstalled -Context $Context -PackageId $Package.packageId)) {
         return 'AlreadyPresent'
     }
     $arguments = @(
@@ -280,6 +418,13 @@ function Install-WsWingetPackage {
         $arguments += '--force'
     }
     $result = Invoke-WsProcess -FilePath 'winget' -Arguments $arguments
+    if ($result.ExitCode -eq -1978335189) {
+        Write-WsLog "winget 报告已安装或无需升级：$($Package.packageId)" -Level SKIP -Context $Context
+        if ($Context.WingetInstalledIds) {
+            [void]$Context.WingetInstalledIds.Add([string]$Package.packageId)
+        }
+        return 'AlreadyPresent'
+    }
     if ($result.ExitCode -ne 0) {
         throw "winget 安装 $($Package.packageId) 失败，退出码 $($result.ExitCode)"
     }
@@ -826,6 +971,9 @@ function Invoke-WsPackageGroup {
         [object[]]$Packages = @()
     )
 
+    if (-not $Context.DryRun) {
+        Initialize-WsWingetInstalledState -Context $Context -Packages $Packages
+    }
     foreach ($package in $Packages) {
         $result = Invoke-WsPackage -Context $Context -Package $package
         $Context.Results.Add($result)

@@ -412,6 +412,68 @@ Describe '包安装' {
         }
     }
 
+    It 'winget 批量列表命中时写入缓存' {
+        InModuleScope WsBootstrap -Parameters @{ Repo = $script:repo; Directory = $TestDrive } {
+            param($Repo, $Directory)
+            $context = New-WsContext -RepoRoot $Repo
+            $context.LogPath = Join-Path $Directory 'winget-lookup.log'
+            Mock Invoke-WsProcess {
+                param($FilePath, $Arguments)
+                $text = ($Arguments -join ' ')
+                if ($text -eq 'list --accept-source-agreements') {
+                    return [pscustomobject]@{
+                        ExitCode = 0
+                        Output   = @(
+                            'Name        Id          Version  Source',
+                            '----------  ----------  -------  ------',
+                            '7-Zip       7zip.7zip   26.06    winget'
+                        )
+                    }
+                }
+                throw "不应调用：$text"
+            }
+            $packages = @([pscustomobject]@{ provider = 'winget'; packageId = '7zip.7zip' })
+            Initialize-WsWingetInstalledState -Context $context -Packages $packages
+            Test-WsWingetInstalled -Context $context -PackageId '7zip.7zip' | Should -BeTrue
+            Test-WsWingetInstalled -Context $context -PackageId 'Vendor.X' | Should -BeFalse
+            Should -Invoke Invoke-WsProcess -Times 1 -ParameterFilter { ($Arguments -join ' ') -eq 'list --accept-source-agreements' }
+        }
+    }
+
+    It '未初始化时回退逐包检测' {
+        InModuleScope WsBootstrap -Parameters @{ Repo = $script:repo; Directory = $TestDrive } {
+            param($Repo, $Directory)
+            $context = New-WsContext -RepoRoot $Repo
+            $context.LogPath = Join-Path $Directory 'winget-lookup-fallback.log'
+            Mock Invoke-WsProcess {
+                param($FilePath, $Arguments)
+                if (($Arguments -join ' ') -like 'list --id 7zip.7zip*') {
+                    return [pscustomobject]@{ ExitCode = 0; Output = @() }
+                }
+                return [pscustomobject]@{ ExitCode = 1; Output = @() }
+            }
+            Test-WsWingetInstalled -Context $context -PackageId '7zip.7zip' | Should -BeTrue
+            Should -Invoke Invoke-WsProcess -Times 1 -ParameterFilter { ($Arguments -join ' ') -like 'list --id 7zip.7zip*' }
+        }
+    }
+
+    It 'winget 返回无需升级时按已安装处理' {
+        InModuleScope WsBootstrap -Parameters @{ Repo = $script:repo; Directory = $TestDrive } {
+            param($Repo, $Directory)
+            $context = New-WsContext -RepoRoot $Repo
+            $context.LogPath = Join-Path $Directory 'winget-already-installed.log'
+            Mock Test-WsWingetInstalled { $false }
+            Mock Invoke-WsProcess {
+                [pscustomobject]@{ ExitCode = -1978335189; Output = @('No available upgrade found.') }
+            }
+            $package = [pscustomobject]@{
+                id = 'clash'; name = 'Clash Party'; provider = 'winget';
+                packageId = 'Mihomo-Party.Clash-Party'; required = $true
+            }
+            Install-WsWingetPackage -Context $context -Package $package | Should -Be 'AlreadyPresent'
+        }
+    }
+
     It 'winget 安装参数包含静默与协议参数' {
         InModuleScope WsBootstrap -Parameters @{ Repo = $script:repo; Directory = $TestDrive } {
             param($Repo, $Directory)
