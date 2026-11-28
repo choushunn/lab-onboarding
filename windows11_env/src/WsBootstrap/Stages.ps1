@@ -368,8 +368,22 @@ function Invoke-WsSkillsSync {
         return
     }
     $scriptPath = Join-Path $Context.RepoRoot 'scripts\sync-skills.ps1'
-    $result = Invoke-WsProcess -FilePath 'pwsh' -Arguments @('-NoProfile', '-File', $scriptPath, '-Direction', ($Context.Direction -join ','))
-    foreach ($line in @($result.Output)) {
+    $skillsLog = Join-Path $env:TEMP ('wsbootstrap-skills-' + $Context.RunId + '.log')
+    Remove-Item -LiteralPath $skillsLog -Force -ErrorAction SilentlyContinue
+    try {
+        $result = Invoke-WsProcess -FilePath 'pwsh' -Arguments @(
+            '-NoProfile', '-File', $scriptPath, '-Direction', ($Context.Direction -join ','),
+            '-LogFile', $skillsLog
+        )
+        $lines = if ((Test-Path -LiteralPath $skillsLog -PathType Leaf) -and (Get-Item -LiteralPath $skillsLog).Length -gt 0) {
+            @(Get-Content -LiteralPath $skillsLog -Encoding utf8)
+        } else {
+            @($result.Output | ForEach-Object { [string]$_ })
+        }
+    } finally {
+        Remove-Item -LiteralPath $skillsLog -Force -ErrorAction SilentlyContinue
+    }
+    foreach ($line in @($lines)) {
         $text = [string]$line
         if ($text.Trim()) {
             Write-WsLog ('[Skills] ' + $text) -Context $Context

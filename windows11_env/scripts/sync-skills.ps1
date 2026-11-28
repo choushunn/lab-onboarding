@@ -8,11 +8,13 @@ param(
     [switch]$Remove,
     [switch]$Force,
     [string]$DataFile,
-    [string]$SkillsRoot
+    [string]$SkillsRoot,
+    [string]$LogFile
 )
 
 $ErrorActionPreference = 'Stop'
 $script:SkillsRepoRoot = Split-Path -Parent $PSScriptRoot
+$script:SkillLogPath = $LogFile
 
 function Write-SkillLog {
     param(
@@ -20,6 +22,9 @@ function Write-SkillLog {
         [ValidateSet('INFO', 'WARN', 'ERROR', 'SKIP', 'STEP')][string]$Level = 'INFO'
     )
 
+    if ($script:SkillLogPath) {
+        Add-Content -LiteralPath $script:SkillLogPath -Value ('[{0}] {1}' -f $Level, $Message) -Encoding utf8
+    }
     $color = switch ($Level) {
         'STEP' { 'Cyan' }
         'WARN' { 'Yellow' }
@@ -120,9 +125,11 @@ function Invoke-SkillsSync {
         [switch]$Remove,
         [switch]$Force,
         [string]$DataFile,
-        [string]$SkillsRoot
+        [string]$SkillsRoot,
+        [string]$LogFile
     )
 
+    $script:SkillLogPath = $LogFile
     $dataPath = if ($DataFile) { $DataFile } else { Join-Path $script:SkillsRepoRoot 'data\skills.json' }
     $directionPath = Join-Path $script:SkillsRepoRoot 'data\directions.json'
     if (-not (Test-Path -LiteralPath $dataPath)) {
@@ -203,5 +210,5 @@ function Invoke-SkillsSync {
 }
 
 if ($MyInvocation.InvocationName -ne '.') {
-    exit (Invoke-SkillsSync -Direction $Direction -DryRun:$DryRun -Update:$Update -Remove:$Remove -Force:$Force -DataFile $DataFile -SkillsRoot $SkillsRoot)
+    exit (Invoke-SkillsSync -Direction $Direction -DryRun:$DryRun -Update:$Update -Remove:$Remove -Force:$Force -DataFile $DataFile -SkillsRoot $SkillsRoot -LogFile $LogFile)
 }
